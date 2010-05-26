@@ -11,7 +11,7 @@
 
 # To use this,
 # establish `zle-line-init' containing `auto-fu-init' something like below
-# % source auto-fu.zsh; zle-line-init () {aufo-fu-init;}; zle -N zle-line-init
+# % source auto-fu.zsh; zle-line-init () {auto-fu-init;}; zle -N zle-line-init
 
 # XXX: use with the error correction or _match completer.
 # If you got the correction errors during auto completing the word, then
