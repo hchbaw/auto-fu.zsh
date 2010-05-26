@@ -10,8 +10,11 @@
 # I want to use it with menu selection.
 
 # To use this,
-# establish `zle-line-init' containing `auto-fu-init' something like below
+# 1) establish `zle-line-init' containing `auto-fu-init' something like below
 # % source auto-fu.zsh; zle-line-init () {auto-fu-init;}; zle -N zle-line-init
+# 2) use the _oldlist completer something like below
+# % zstyle ':completion:*' completer _oldlist _complete
+# (If you have a lot of completer, please insert _oldlist before _complete.)
 
 # XXX: use with the error correction or _match completer.
 # If you got the correction errors during auto completing the word, then
