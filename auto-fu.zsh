@@ -6,7 +6,7 @@
 
 # Thank you very much y.fujii!
 
-# Adopted by Takeshi Banse <takebi@laafc.net>
+# Adapted by Takeshi Banse <takebi@laafc.net>
 # I want to use it with menu selection.
 
 # To use this,
@@ -212,7 +212,7 @@ zle -N auto-fu
 function afu-k () {
   ((compstate[list_lines] + BUFFERLINES + 2 > LINES)) && { 
     compstate[list]=''
-    zle -M "$compstate[list_lines]($compstate[nmatches]) to many matches..."
+    zle -M "$compstate[list_lines]($compstate[nmatches]) too many matches..."
   }
 }
 
