@@ -30,6 +30,14 @@
 # TODO: add afu-viins/afu-vicmd keymaps.
 # TODO: handle empty or space characters.
 
+# History
+
+# v0.0.1.1
+# Documentation typo fix.
+
+# v0.0.1
+# Initial version.
+
 afu_zles=( \
   # Zles should be rebinded in the afu keymap. `auto-fu-maybe' to be called
   # after it's invocation, see `afu-initialize-zle-afu'.
