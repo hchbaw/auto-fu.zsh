@@ -115,7 +115,6 @@ EOT
 afu-register-zle-accept-line afu+accept-line
 afu-register-zle-accept-line afu+accept-line-and-down-history
 afu-register-zle-accept-line afu+accept-and-hold
-afu-register-zle-accept-line afu+run-help
 
 # Entry point.
 auto-fu-init () {
