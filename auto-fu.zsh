@@ -47,22 +47,21 @@ afu_zles=( \
 
 autoload +X keymap+widget
 
-(( $+functions[keymap+widget-fu] )) || {
+{
   local code=${functions[keymap+widget]/for w in *
 	do
 /for w in $afu_zles
   do
   }
-  eval "function keymap+widget-fu () { $code }"
+  eval "function afu-keymap+widget () { $code }"
 }
 
-(( $+functions[afu-boot] )) ||
-afu-boot () {
+afu-install () {
   {
     bindkey -M isearch "^M" afu+accept-line
 
     bindkey -N afu emacs
-    keymap+widget-fu
+    (( $+functions[afu-keymap+widget] )) && afu-keymap+widget
     bindkey -M afu "^I" afu+complete-word
     bindkey -M afu "^M" afu+accept-line
     bindkey -M afu "^J" afu+accept-line
@@ -74,15 +73,15 @@ afu-boot () {
     bindkey -M afu-vicmd  "i" afu+vi-ins-mode
   } always { "$@" }
 }
-(( $+functions[afu+vi-ins-mode] )) ||
-(( $+functions[afu+vi-cmd-mode] )) || {
-afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
-afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
-}
 
-{ #(( ${#${(@M)keymaps:#afu}} )) || afu-boot bindkey -e
-  #afu-boot bindkey -e
-  afu-boot
+afu+vi-ins-mode () { zle -K afu      ; }
+afu+vi-cmd-mode () { zle -K afu-vicmd; }
+zle -N afu+vi-ins-mode
+zle -N afu+vi-cmd-mode
+
+{ #(( ${#${(@M)keymaps:#afu}} )) || afu-install bindkey -e
+  #afu-install bindkey -e
+  afu-install
 } >/dev/null 2>&1
 
 local -a afu_accept_lines
@@ -151,7 +150,6 @@ afu-register-zle-afu () {
   eval "function $afufun () { with-afu $rawzle; }; zle -N $afufun"
 }
 
-(( $+functions[afu-initialize-zle-afu] )) ||
 afu-initialize-zle-afu () {
   local z
   for z in $afu_zles ;do
