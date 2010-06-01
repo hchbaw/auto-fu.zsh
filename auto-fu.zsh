@@ -13,7 +13,7 @@
 # 1) source this file.
 # % source auto-fu.zsh
 # 2) establish `zle-line-init' containing `auto-fu-init' something like below.
-# % source auto-fu.zsh; zle-line-init () {auto-fu-init;}; zle -N zle-line-init
+# % zle-line-init () {auto-fu-init;}; zle -N zle-line-init
 # 3) use the _oldlist completer something like below.
 # % zstyle ':completion:*' completer _oldlist _complete
 # (If you have a lot of completer, please insert _oldlist before _complete.)
@@ -22,13 +22,13 @@
 # every shell startups, if you zcompile the necessary functions.
 # *1) zcompile the defined functions. (generates ~/.zsh/auto-fu.zwc)
 # % A=/path/to/auto-fu.zsh; (zsh -c "source $A ; auto-fu-zcompile $A ~/.zsh")
-# *2) load the zcompiled file instead of this file itself and some tweaks.
+# *2) source the zcompiled file instead of this file and some tweaks.
 # % source ~/.zsh/auto-fu; auto-fu-install
-# *3) establish `zle-line-init' and such like a few lines above (3)), too.
+# *3) establish `zle-line-init' and such (same as a few lines above).
 # Note:
-# It is approximately *10- faster if zcompiled according to this result :)
+# It is approximately *(6~10) faster if zcompiled, according to this result :)
 # TIMEFMT="%*E %J"
-# 0.041 ( source auto-fu.zsh; )
+# 0.041 ( source ./auto-fu.zsh; )
 # 0.004 ( source ~/.zsh/auto-fu; auto-fu-install; )
 
 # XXX: use with the error correction or _match completer.
@@ -54,8 +54,8 @@
 # Initial version.
 
 afu_zles=( \
-  # Zles should be rebinded in the afu keymap. `auto-fu-maybe' to be called
-  # after it's invocation, see `afu-initialize-zle-afu'.
+  # Zle widgets should be rebinded in the afu keymap. `auto-fu-maybe' to be
+  # called after it's invocation, see `afu-initialize-zle-afu'.
   self-insert backward-delete-char backward-kill-word kill-line \
   kill-whole-line \
 )
@@ -92,7 +92,7 @@ afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 
 afu-install afu-keymap+widget
 
-local -a afu_accept_lines
+declare -a afu_accept_lines
 
 afu-recursive-edit-and-accept () {
   local -a __accepted
