@@ -72,32 +72,25 @@ autoload +X keymap+widget
 }
 
 afu-install () {
-  {
-    bindkey -M isearch "^M" afu+accept-line
+  bindkey -M isearch "^M" afu+accept-line
 
-    bindkey -N afu emacs
-    (( $+functions[afu-keymap+widget] )) && afu-keymap+widget
-    bindkey -M afu "^I" afu+complete-word
-    bindkey -M afu "^M" afu+accept-line
-    bindkey -M afu "^J" afu+accept-line
-    bindkey -M afu "^O" afu+accept-line-and-down-history
-    bindkey -M afu "^[a" afu+accept-and-hold
-    bindkey -M afu "^X^[" afu+vi-cmd-mode
+  bindkey -N afu emacs
+  { "$@" }
+  bindkey -M afu "^I" afu+complete-word
+  bindkey -M afu "^M" afu+accept-line
+  bindkey -M afu "^J" afu+accept-line
+  bindkey -M afu "^O" afu+accept-line-and-down-history
+  bindkey -M afu "^[a" afu+accept-and-hold
+  bindkey -M afu "^X^[" afu+vi-cmd-mode
 
-    bindkey -N afu-vicmd vicmd
-    bindkey -M afu-vicmd  "i" afu+vi-ins-mode
-  } always { "$@" }
+  bindkey -N afu-vicmd vicmd
+  bindkey -M afu-vicmd  "i" afu+vi-ins-mode
 }
 
-afu+vi-ins-mode () { zle -K afu      ; }
-afu+vi-cmd-mode () { zle -K afu-vicmd; }
-zle -N afu+vi-ins-mode
-zle -N afu+vi-cmd-mode
+afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
+afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 
-{ #(( ${#${(@M)keymaps:#afu}} )) || afu-install bindkey -e
-  #afu-install bindkey -e
-  afu-install
-} >/dev/null 2>&1
+afu-install afu-keymap+widget
 
 local -a afu_accept_lines
 
@@ -283,15 +276,15 @@ auto-fu-zcompile () {
   echo "** zcompiling auto-fu in ${d} for a little faster startups..."
   source ${s}
   afu-clean ${d}
-  local -a zs
-  : ${(A)zs::=\
-      ${(M)${(@f)"$(<$s)"}:#(zle -N *|afu-register-zle-accept-line afu*)}}
   eval ${${"$(<=(cat <<"EOT"
     auto-fu-install () { { $body }; afu-install; }
 EOT
   ))"}/\$body/
     $(print -l \
-      ${zs/afu-register-zle-accept-line/zle -N} \
+      "# afu's all zle widgets expect own keymap+widgets stuff" \
+      ${${${(M)${(@f)"$(zle -l)"}:#(afu+*|auto-fu*)}:#(\
+        ${(j.|.)afu_zles/(#b)(*)/afu+$match})}/(#b)(*)/zle -N $match} \
+      "# keymap+widget machinaries" \
       ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap} \
       ${afu_zles/(#b)(*)/zle -N afu+$match})}
   echo "* writing code ${g}"
@@ -299,13 +292,13 @@ EOT
     local -a fs
     : ${(A)fs::=${(Mk)functions:#(*afu*|*auto-fu*|*-by-keymap)}}
     echo "#!zsh"
-    echo "# NOTE: Generated from auto-fu.zsh. Please DO NOT EDIT."; echo
+    echo "# NOTE: Generated from auto-fu.zsh ($0). Please DO NOT EDIT."; echo
     echo "$(functions \
       ${fs:#(afu-register-*|afu-initialize-*|afu-keymap+widget|\
         afu-clean|auto-fu-zcompile)})"
   }>! ${d}/auto-fu
   echo -n '* '; autoload -U zrecompile && zrecompile -p ${g} && {
-    echo "rm -f ${g}" | sh -x # A bit more faster if it is not there.
+    [[ -z $AUTO_FU_ZCOMPILE_DEBUG ]] && { echo "rm -f ${g}" | sh -x }
     echo "** All done."
     echo "** Please update your .zshrc to load the zcompiled file like this,"
     cat <<EOT
