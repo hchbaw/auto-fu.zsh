@@ -10,11 +10,26 @@
 # I want to use it with menu selection.
 
 # To use this,
-# 1) establish `zle-line-init' containing `auto-fu-init' something like below
+# 1) source this file.
+# % source auto-fu.zsh
+# 2) establish `zle-line-init' containing `auto-fu-init' something like below.
 # % source auto-fu.zsh; zle-line-init () {auto-fu-init;}; zle -N zle-line-init
-# 2) use the _oldlist completer something like below
+# 3) use the _oldlist completer something like below.
 # % zstyle ':completion:*' completer _oldlist _complete
 # (If you have a lot of completer, please insert _oldlist before _complete.)
+
+# *Optionally* you can use the zcompiled file for a little faster loading on
+# every shell startups, if you zcompile the necessary functions.
+# *1) zcompile the defined functions. (generates ~/.zsh/auto-fu.zwc)
+# % A=/path/to/auto-fu.zsh; (zsh -c "source $A ; auto-fu-zcompile $A ~/.zsh")
+# *2) load the zcompiled file instead of this file itself and some tweaks.
+# % source ~/.zsh/auto-fu; auto-fu-install
+# *3) establish `zle-line-init' and such like a few lines above (3)), too.
+# Note:
+# It is approximately *10- faster if zcompiled according to this result :)
+# TIMEFMT="%*E %J"
+# 0.041 ( source auto-fu.zsh; )
+# 0.004 ( source ~/.zsh/auto-fu; auto-fu-install; )
 
 # XXX: use with the error correction or _match completer.
 # If you got the correction errors during auto completing the word, then
@@ -171,11 +186,13 @@ zle -N afu+magic-space
 
 afu-able-p () {
   local c=$LBUFFER[-1]
-  local ret=0
-  case $c in
-    (| |.|~|\^|\)) ret=1 ;;
-  esac
-  return $ret
+  [[ $c == ''  ]] && return 1;
+  [[ $c == ' ' ]] && return 1;
+  [[ $c == '.' ]] && return 1;
+  [[ $c == '^' ]] && return 1;
+  [[ $c == '~' ]] && return 1;
+  [[ $c == ')' ]] && return 1;
+  return 0
 }
 
 auto-fu-maybe () {
@@ -246,4 +263,58 @@ afu+complete-word () {
 }
 zle -N afu+complete-word
 
-unset afu_zles
+[[ -z $afu_zcompiling_p ]] && unset afu_zles
+
+afu-clean () {
+  local d=${1:-~/.zsh}
+  rm -f ${d}/{auto-fu,auto-fu.zwc*}
+}
+
+auto-fu-zcompile () {
+  local afu_zcompiling_p=t
+
+  local s=${1:?Please specify the source file itself.}
+  local d=${2:?Please specify the directory for the zcompiled file.}
+  local g=${d}/auto-fu
+  emulate -L zsh
+  setopt extended_glob no_shwordsplit
+  local match mbegin mend
+
+  echo "** zcompiling auto-fu in ${d} for a little faster startups..."
+  source ${s}
+  afu-clean ${d}
+  local -a zs
+  : ${(A)zs::=\
+      ${(M)${(@f)"$(<$s)"}:#(zle -N *|afu-register-zle-accept-line afu*)}}
+  eval ${${"$(<=(cat <<"EOT"
+    auto-fu-install () { { $body }; afu-install; }
+EOT
+  ))"}/\$body/
+    $(print -l \
+      ${zs/afu-register-zle-accept-line/zle -N} \
+      ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap} \
+      ${afu_zles/(#b)(*)/zle -N afu+$match})}
+  echo "* writing code ${g}"
+  {
+    local -a fs
+    : ${(A)fs::=${(Mk)functions:#(*afu*|*auto-fu*|*-by-keymap)}}
+    echo "#!zsh"
+    echo "# NOTE: Generated from auto-fu.zsh. Please DO NOT EDIT."; echo
+    echo "$(functions \
+      ${fs:#(afu-register-*|afu-initialize-*|afu-keymap+widget|\
+        afu-clean|auto-fu-zcompile)})"
+  }>! ${d}/auto-fu
+  echo -n '* '; autoload -U zrecompile && zrecompile -p ${g} && {
+    echo "rm -f ${g}" | sh -x # A bit more faster if it is not there.
+    echo "** All done."
+    echo "** Please update your .zshrc to load the zcompiled file like this,"
+    cat <<EOT
+-- >8 --
+## auto-fu.zsh stuff.
+# source ${s/$HOME/~}
+{ source ${g/$HOME/~}; auto-fu-install; }
+zle-line-init () {auto-fu-init;}; zle -N zle-line-init
+-- 8< --
+EOT
+  }
+}
