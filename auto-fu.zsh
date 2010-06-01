@@ -128,7 +128,7 @@ auto-fu-init () {
     POSTDISPLAY=''
   }
 }
-zle -N afu
+zle -N auto-fu-init
 
 afu-clearing-maybe () {
   region_highlight=()
