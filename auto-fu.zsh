@@ -363,7 +363,7 @@ auto-fu-zcompile () {
   echo -n '* '; autoload -U zrecompile && zrecompile -p -R ${g} && {
     zmodload zsh/datetime
     touch --date="$(strftime "%F %T" $((EPOCHSECONDS - 120)))" ${g}
-    [[ -z $AUTO_FU_ZCOMPILE_DEBUG ]] && { echo "rm -f ${g}" | sh -x }
+    [[ -z $AUTO_FU_ZCOMPILE_NOKEEP ]] || { echo "rm -f ${g}" | sh -x }
     echo "** All done."
     echo "** Please update your .zshrc to load the zcompiled file like this,"
     cat <<EOT
