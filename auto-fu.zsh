@@ -31,6 +31,23 @@
 # 0.041 ( source ./auto-fu.zsh; )
 # 0.004 ( source ~/.zsh/auto-fu; auto-fu-install; )
 
+# Configuration
+# The auto-fu features can be configured via zstyle.
+# :auto-fu:highlight
+#   input
+#     A highlight specification used for user input string.
+#   completion
+#     A highlight specification used for completion string.
+# :auto-fu:var
+#   postdisplay
+#     An initial indication string for POSTDISPLAY in auto-fu-init.
+# Configuration example
+# -- >8 --
+# zstyle ':auto-fu:highlight' input bold
+# zstyle ':auto-fu:highlight' completion fg=black,bold
+# zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+# -- 8< --
+
 # XXX: use with the error correction or _match completer.
 # If you got the correction errors during auto completing the word, then
 # plese do _not_ do `magic-space` or `accept-line`. Insted please do the
@@ -40,7 +57,6 @@
 # (For example, 'ls --bbb' and 'ls --*~^*al*' etc.)
 
 # TODO: handle RBUFFER.
-# TODO: region_highlight, POSTDISPLAY and such should be zstyleable.
 # TODO: signal handling during the recursive edit.
 # TODO: add afu-viins/afu-vicmd keymaps.
 # TODO: handle empty or space characters.
@@ -91,6 +107,13 @@ afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
 afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 
 afu-install afu-keymap+widget
+function () {
+  [[ -z $AUTO_FU_NOCP ]] || return
+  # For backward compatibility
+  zstyle ':auto-fu:highlight' input bold
+  zstyle ':auto-fu:highlight' completion fg=black,bold
+  zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+}
 
 declare -a afu_accept_lines
 
@@ -110,7 +133,11 @@ afu-register-zle-accept-line () {
   local code=${"$(<=(cat <<"EOT"
   $afufun () {
     __accepted=($WIDGET ${=NUMERIC:+-n $NUMERIC} "$@")
-    zle $rawzle && region_highlight=("0 ${#BUFFER} bold")
+    zle $rawzle && {
+      local hi
+      zstyle -s ':auto-fu:highlight' input hi
+      [[ -z ${hi} ]] || region_highlight=("0 ${#BUFFER} ${hi}")
+    }
     return 0
   }
   zle -N $afufun
@@ -125,14 +152,19 @@ afu-register-zle-accept-line afu+accept-and-hold
 
 # Entry point.
 auto-fu-init () {
+  local auto_fu_init_p=1
+  local ps
   {
     local -a region_highlight
     local afu_in_p=0
-    POSTDISPLAY=$'\n-azfu-'
+
+    zstyle -s ':auto-fu:var' postdisplay ps
+    [[ -z ${ps} ]] || POSTDISPLAY="$ps"
+
     afu-recursive-edit-and-accept
     zle -I
   } always {
-    POSTDISPLAY=''
+    [[ -z ${ps} ]] || POSTDISPLAY=''
   }
 }
 zle -N auto-fu-init
@@ -219,7 +251,11 @@ auto-fu () {
   if [[ "$buffer_cur[1,cursor_cur]" == "$buffer_new[1,cursor_cur]" ]];
   then
     CURSOR="$cursor_cur"
-    region_highlight=("$CURSOR $cursor_new fg=black,bold")
+    {
+      local hi
+      zstyle -s ':auto-fu:highlight' completion hi
+      [[ -z ${hi} ]] || region_highlight=("$CURSOR $cursor_new ${hi}")
+    }
 
     if [[ "$buffer_cur" != "$buffer_new" ]] || ((cursor_cur != cursor_new))
     then afu_in_p=1; {
@@ -335,6 +371,9 @@ auto-fu-zcompile () {
 ## auto-fu.zsh stuff.
 # source ${s/$HOME/~}
 { . ${g/$HOME/~}; auto-fu-install; }
+zstyle ':auto-fu:highlight' input bold
+zstyle ':auto-fu:highlight' completion fg=black,bold
+zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
 zle-line-init () {auto-fu-init;}; zle -N zle-line-init
 -- 8< --
 EOT
