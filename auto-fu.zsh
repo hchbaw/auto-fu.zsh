@@ -258,9 +258,34 @@ zle -N afu+complete-word
 
 [[ -z $afu_zcompiling_p ]] && unset afu_zles
 
+# NOTE: This is iffy. It dumps the necessary functions into ~/.zsh/auto-fu,
+# then zrecompiles it into ~/.zsh/auto-fu.zwc.
+
 afu-clean () {
   local d=${1:-~/.zsh}
-  rm -f ${d}/{auto-fu,auto-fu.zwc*}
+  rm -f ${d}/{auto-fu,auto-fu.zwc*(N)}
+}
+
+afu-install-installer () {
+  local match mbegin mend
+
+  eval ${${${"$(<=(cat <<"EOT"
+    auto-fu-install () {
+      { $body }
+      afu-install
+      typeset -ga afu_accept_lines
+      afu_accept_lines=($afu_accept_lines)
+    }
+EOT
+  ))"}/\$body/
+    $(print -l \
+      "# afu's all zle widgets expect own keymap+widgets stuff" \
+      ${${${(M)${(@f)"$(zle -l)"}:#(afu+*|auto-fu*)}:#(\
+        ${(j.|.)afu_zles/(#b)(*)/afu+$match})}/(#b)(*)/zle -N $match} \
+      "# keymap+widget machinaries" \
+      ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap} \
+      ${afu_zles/(#b)(*)/zle -N afu+$match})}/
+      \$afu_accept_lines/$afu_accept_lines}
 }
 
 auto-fu-zcompile () {
@@ -271,22 +296,12 @@ auto-fu-zcompile () {
   local g=${d}/auto-fu
   emulate -L zsh
   setopt extended_glob no_shwordsplit
-  local match mbegin mend
 
   echo "** zcompiling auto-fu in ${d} for a little faster startups..."
-  source ${s}
+  { source ${s} >/dev/null 2>&1 } # Paranoid.
+  echo "mkdir -p ${d}" | sh -x
   afu-clean ${d}
-  eval ${${"$(<=(cat <<"EOT"
-    auto-fu-install () { { $body }; afu-install; }
-EOT
-  ))"}/\$body/
-    $(print -l \
-      "# afu's all zle widgets expect own keymap+widgets stuff" \
-      ${${${(M)${(@f)"$(zle -l)"}:#(afu+*|auto-fu*)}:#(\
-        ${(j.|.)afu_zles/(#b)(*)/afu+$match})}/(#b)(*)/zle -N $match} \
-      "# keymap+widget machinaries" \
-      ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap} \
-      ${afu_zles/(#b)(*)/zle -N afu+$match})}
+  afu-install-installer
   echo "* writing code ${g}"
   {
     local -a fs
@@ -295,9 +310,11 @@ EOT
     echo "# NOTE: Generated from auto-fu.zsh ($0). Please DO NOT EDIT."; echo
     echo "$(functions \
       ${fs:#(afu-register-*|afu-initialize-*|afu-keymap+widget|\
-        afu-clean|auto-fu-zcompile)})"
+        afu-clean|afu-install-installer|auto-fu-zcompile)})"
   }>! ${d}/auto-fu
-  echo -n '* '; autoload -U zrecompile && zrecompile -p ${g} && {
+  echo -n '* '; autoload -U zrecompile && zrecompile -p -R ${g} && {
+    zmodload zsh/datetime
+    touch --date="$(strftime "%F %T" $((EPOCHSECONDS - 120)))" ${g}
     [[ -z $AUTO_FU_ZCOMPILE_DEBUG ]] && { echo "rm -f ${g}" | sh -x }
     echo "** All done."
     echo "** Please update your .zshrc to load the zcompiled file like this,"
@@ -305,7 +322,7 @@ EOT
 -- >8 --
 ## auto-fu.zsh stuff.
 # source ${s/$HOME/~}
-{ source ${g/$HOME/~}; auto-fu-install; }
+{ . ${g/$HOME/~}; auto-fu-install; }
 zle-line-init () {auto-fu-init;}; zle -N zle-line-init
 -- 8< --
 EOT
