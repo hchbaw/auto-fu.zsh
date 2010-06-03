@@ -56,10 +56,13 @@
 # I'm very sorry for this annonying behaviour.
 # (For example, 'ls --bbb' and 'ls --*~^*al*' etc.)
 
+# TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: handle RBUFFER.
 # TODO: signal handling during the recursive edit.
 # TODO: add afu-viins/afu-vicmd keymaps.
 # TODO: handle empty or space characters.
+# TODO: cp x /usr/
+# TODO: region_highlight vs afu-able-p → nil
 
 # History
 
