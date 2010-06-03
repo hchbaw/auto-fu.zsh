@@ -137,6 +137,18 @@ auto-fu-init () {
 }
 zle -N auto-fu-init
 
+# Entry point.
+auto-fu-on  () { with-afu-gvars zle -K afu   }; zle -N auto-fu-on
+auto-fu-off () { with-afu-gvars zle -K emacs }; zle -N auto-fu-off # emacs...?
+with-afu-gvars () {
+  (( auto_fu_init_p == 1 )) && {
+    zle -M "Sorry, can't turn on or off if auto-fu-init is in effect."; return
+  }
+  typeset -g afu_in_p=0
+  region_highlight=()
+  "$@"
+}
+
 afu-clearing-maybe () {
   region_highlight=()
   if ((afu_in_p == 1)); then
