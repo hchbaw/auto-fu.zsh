@@ -17,9 +17,9 @@
 # 3) use the _oldlist completer something like below.
 # % zstyle ':completion:*' completer _oldlist _complete
 # (If you have a lot of completer, please insert _oldlist before _complete.)
-
+#
 # *Optionally* you can use the zcompiled file for a little faster loading on
-# every shell startups, if you zcompile the necessary functions.
+# every shell startup, if you zcompile the necessary functions.
 # *1) zcompile the defined functions. (generates ~/.zsh/auto-fu.zwc)
 # % A=/path/to/auto-fu.zsh; (zsh -c "source $A ; auto-fu-zcompile $A ~/.zsh")
 # *2) source the zcompiled file instead of this file and some tweaks.
