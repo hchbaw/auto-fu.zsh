@@ -56,6 +56,9 @@
 # I'm very sorry for this annonying behaviour.
 # (For example, 'ls --bbb' and 'ls --*~^*al*' etc.)
 
+# TODO: ^D
+# TODO: run-help, run-help-foo
+# TODO: activate afu+magic-space with extra cares.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: handle RBUFFER.
 # TODO: signal handling during the recursive edit.
