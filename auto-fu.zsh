@@ -56,7 +56,9 @@
 # I'm very sorry for this annonying behaviour.
 # (For example, 'ls --bbb' and 'ls --*~^*al*' etc.)
 
-# TODO: ^D
+# XXX: ignoreeof semantics changes for overriding ^D.
+# You cannot change the ignoreeof option interactively. I'm verry sorry.
+
 # TODO: activate afu+magic-space with extra cares.
 # TODO: teach afu-able-p magic-space.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
@@ -104,6 +106,8 @@ autoload +X keymap+widget
 afu-install () {
   bindkey -M isearch "^M" afu+accept-line
 
+  afu-install-eof
+
   bindkey -N afu emacs
   { "$@" }
   bindkey -M afu "^I" afu+complete-word
@@ -116,6 +120,39 @@ afu-install () {
   bindkey -N afu-vicmd vicmd
   bindkey -M afu-vicmd  "i" afu+vi-ins-mode
 }
+
+afu-install-eof () {
+  zstyle -t ':auto-fu:var' eof-installed-p || {
+    # fiddle the main(emacs) keymap. The assumption is it propagates down to
+    # the afu keymap afterwards.
+    zmodload zsh/parameter
+    if [[ "$options[ignoreeof]" == "on" ]]; then
+      bindkey "^D" afu+orf-ignoreeof-deletechar-list
+    else
+      setopt ignoreeof
+      bindkey "^D" afu+orf-exit-deletechar-list
+    fi
+  } always {
+    zstyle ':auto-fu:var' eof-installed-p yes
+  }
+}
+
+afu-eof-maybe () {
+  local eof="$1"; shift
+  [[ "$BUFFER" != '' ]] || { $eof; return }
+  "$@"
+}
+
+afu-ignore-eof () { zle -M "zsh: use 'exit' to exit." }
+
+afu-register-zle-eof () {
+  local fun="$1"
+  local then="$2"
+  local else="${3:-delete-char-or-list}"
+  eval "$fun () { afu-eof-maybe $then zle $else }; zle -N $fun"
+}
+afu-register-zle-eof afu+orf-ignoreeof-deletechar-list afu-ignore-eof
+afu-register-zle-eof      afu+orf-exit-deletechar-list exit
 
 afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
 afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
