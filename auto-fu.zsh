@@ -57,7 +57,6 @@
 # (For example, 'ls --bbb' and 'ls --*~^*al*' etc.)
 
 # TODO: ^D
-# TODO: run-help, run-help-foo
 # TODO: activate afu+magic-space with extra cares.
 # TODO: teach afu-able-p magic-space.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
@@ -135,11 +134,8 @@ declare -a afu_accept_lines
 afu-recursive-edit-and-accept () {
   local -a __accepted
   zle recursive-edit -K afu || { zle send-break; return }
-  #if [[ ${__accepted[0]} != afu+accept* ]]
-  if (( ${#${(M)afu_accept_lines:#${__accepted[0]}}} ))
-  then zle "${__accepted[@]}"; return
-  else return 0
-  fi
+  (( ${#${(M)afu_accept_lines:#${__accepted[0]}}} > 1 )) &&
+  { zle "${__accepted[@]}"} || { zle accept-line }
 }
 
 afu-register-zle-accept-line () {
@@ -347,8 +343,8 @@ EOT
         ${(j.|.)afu_zles/(#b)(*)/afu+$match})}/(#b)(*)/zle -N $match} \
       "# keymap+widget machinaries" \
       ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap} \
-      ${afu_zles/(#b)(*)/zle -N afu+$match})}/
-      \$afu_accept_lines/$afu_accept_lines}
+      ${afu_zles/(#b)(*)/zle -N afu+$match})
+    }/\$afu_accept_lines/$afu_accept_lines}
 }
 
 auto-fu-zcompile () {
