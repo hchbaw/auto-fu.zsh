@@ -59,13 +59,19 @@
 # TODO: ^D
 # TODO: run-help, run-help-foo
 # TODO: activate afu+magic-space with extra cares.
+# TODO: teach afu-able-p magic-space.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: handle RBUFFER.
 # TODO: signal handling during the recursive edit.
 # TODO: add afu-viins/afu-vicmd keymaps.
 # TODO: handle empty or space characters.
-# TODO: cp x /usr/
+# TODO: cp x /usr/loc
 # TODO: region_highlight vs afu-able-p → nil
+# TODO: region_highlight vs paste
+# TODO: sometimes, extra <TAB> key is needed to starting menu selection.
+# TODO: sometimes, extra <TAB> key yields $buffer_cur as the BUFFER.
+# TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
+# TODO: http://~/, origin/ ⇒ yields extra '/'. Dig into each completer or tag.
 
 # History
 
