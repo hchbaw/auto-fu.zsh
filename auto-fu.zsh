@@ -81,13 +81,7 @@
 # TODO: cp x /usr/loc
 # TODO: region_highlight vs afu-able-p → nil
 # TODO: region_highlight vs paste
-# TODO: sometimes, extra <TAB> key is needed to starting menu selection.
 # TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
-# TODO: http://~/, origin/ ⇒ yields extra '/'. Dig into each completer or tag.
-# TODO: <TAB> key yields previous result. ex) if there is only '.zshrc',
-# % vim .zshr<TAB> <TAB> ⇒ the first <TAB> inserts .zshrc as expected. Then
-# the second <TAB> inserts extra '.zshrc' into the BUFFER. In this case menu
-# select or something other than inserting the previous result is expected.
 # TODO: indicate exact match if possible.
 # TODO: for the screen estate, postdisplay could be cleared if it could be,
 # after accepted etc.
@@ -369,11 +363,20 @@ afu+complete-word () {
     case $LBUFFER[-1] in
       (=) # --prefix= ⇒ complete-word again for `magic-space'ing the suffix
         zle complete-word ;;
-      (/) # path-ish  ⇒ propagate auto-fu
-        zle complete-word; zle -U "$LBUFFER[-1]" ;;
+      (/) # path-ish  ⇒ propagate auto-fu if *-directories
+        zle complete-word
+        [[ -n ${(M)${(@z)"${_lastcomp[tags]}"}:#*-directories} ]] &&
+          zle -U "$LBUFFER[-1]" ;;
       (,) # glob-ish  ⇒ activate the `complete-word''s suffix
         BUFFER="$buffer_cur"; zle complete-word ;;
-      (*) ;;
+      (*)
+        (( $_lastcomp[nmatches]  > 1 )) &&
+          # many matches ⇒ complete-word again to enter the menuselect
+          zle complete-word
+        (( $_lastcomp[nmatches] == 1 )) &&
+          # exact match  ⇒ flag not using _oldlist for the next complete-word
+          _lastcomp[nmatches]=0
+        ;;
     esac
   else
     [[ $LASTWIDGET == afu+*~afu+complete-word ]] && {
