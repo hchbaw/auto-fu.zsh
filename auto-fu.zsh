@@ -88,6 +88,9 @@
 
 # History
 
+# v0.0.1.3
+# Teach ^D and magic-space.
+
 # v0.0.1.2
 # Add configuration option and auto-fu-zcompile for a little faster loading.
 
