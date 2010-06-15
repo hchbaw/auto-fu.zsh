@@ -41,11 +41,24 @@
 # :auto-fu:var
 #   postdisplay
 #     An initial indication string for POSTDISPLAY in auto-fu-init.
+#   enable
+#     A list of zle widget names the automatic complete-word and
+#     list-choices to be triggered after its invocation.
+#     Only with ALL in 'enable', the 'disable' style has any effect.
+#     ALL by default.
+#   disable
+#     A list of zle widget names you do *NOT* want the complete-word to be
+#     triggered. Only used if 'enable' contains ALL. For example,
+#       zstyle ':auto-fu:var' enable all
+#       zstyle ':auto-fu:var' disable magic-space
+#     yields; complete-word will not be triggered after pressing the
+#     space-bar, otherwise automatic thing will be taken into account.
 # Configuration example
 # -- >8 --
 # zstyle ':auto-fu:highlight' input bold
 # zstyle ':auto-fu:highlight' completion fg=black,bold
 # zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+# #zstyle ':auto-fu:var' disable magic-space
 # -- 8< --
 
 # XXX: use with the error correction or _match completer.
@@ -59,8 +72,7 @@
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
 
-# TODO: activate afu+magic-space with extra cares.
-# TODO: teach afu-able-p magic-space.
+# TODO: refine afu-able-space-p or better.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: handle RBUFFER.
 # TODO: signal handling during the recursive edit.
@@ -89,7 +101,7 @@ afu_zles=( \
   # Zle widgets should be rebinded in the afu keymap. `auto-fu-maybe' to be
   # called after it's invocation, see `afu-initialize-zle-afu'.
   self-insert backward-delete-char backward-kill-word kill-line \
-  kill-whole-line \
+  kill-whole-line magic-space \
 )
 
 autoload +X keymap+widget
@@ -238,16 +250,26 @@ afu-clearing-maybe () {
 }
 
 with-afu () {
-  local zlefun="$1"
+  local zlefun="$1"; shift
+  local -a zs
+  : ${(A)zs::=$@}
   afu-clearing-maybe
   ((afu_in_p == 1)) && { afu_in_p=0; BUFFER="$buffer_cur" }
-  zle $zlefun && auto-fu-maybe
+  zle $zlefun && {
+    local es ds
+    zstyle -a ':auto-fu:var' enable es; (( ${#es} == 0 )) && es=(all)
+    if [[ -n ${(M)es:#(#i)all} ]]; then
+      zstyle -a ':auto-fu:var' disable ds
+      : ${(A)es::=${zs:#(${~${(j.|.)ds}})}}
+    fi
+    [[ -n ${(M)es:#${zlefun#.}} ]]
+  } && { auto-fu-maybe }
 }
 
 afu-register-zle-afu () {
   local afufun="$1"
   local rawzle=".${afufun#*+}"
-  eval "function $afufun () { with-afu $rawzle; }; zle -N $afufun"
+  eval "function $afufun () { with-afu $rawzle $afu_zles; }; zle -N $afufun"
 }
 
 afu-initialize-zle-afu () {
@@ -258,26 +280,27 @@ afu-initialize-zle-afu () {
 }
 afu-initialize-zle-afu
 
-afu+magic-space () {
-  afu-clearing-maybe
-  if [[ "$LASTWIDGET" == magic-space ]]; then
-    LBUFFER+=' '
-  else zle .magic-space && {
-    # zle list-choices
-  }
-  fi
-}
-zle -N afu+magic-space
-
 afu-able-p () {
   local c=$LBUFFER[-1]
   [[ $c == ''  ]] && return 1;
-  [[ $c == ' ' ]] && return 1;
+  [[ $c == ' ' ]] && { afu-able-space-p || return 1 && return 0 }
   [[ $c == '.' ]] && return 1;
   [[ $c == '^' ]] && return 1;
   [[ $c == '~' ]] && return 1;
   [[ $c == ')' ]] && return 1;
   return 0
+}
+
+afu-able-space-p () {
+  [[ -z $AUTO_FU_NOCP ]] &&
+    # For backward compatibility.
+    { [[ "$WIDGET" == "magic-space" ]] || return 1 }
+
+  # TODO: This is quite iffy guesswork, broken.
+  local -a x
+  : ${(A)x::=${(z)LBUFFER}}
+  #[[ $x[1] != (man|perldoc|ri) ]]
+  [[ $x[1] != man ]]
 }
 
 auto-fu-maybe () {
