@@ -88,6 +88,9 @@
 
 # History
 
+# v0.0.1.4
+# afu+complete-word bug fixes.
+
 # v0.0.1.3
 # Teach ^D and magic-space.
 
