@@ -82,7 +82,6 @@
 # TODO: region_highlight vs afu-able-p → nil
 # TODO: region_highlight vs paste
 # TODO: sometimes, extra <TAB> key is needed to starting menu selection.
-# TODO: sometimes, extra <TAB> key yields $buffer_cur as the BUFFER.
 # TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
 # TODO: http://~/, origin/ ⇒ yields extra '/'. Dig into each completer or tag.
 # TODO: <TAB> key yields previous result. ex) if there is only '.zshrc',
@@ -377,7 +376,7 @@ afu+complete-word () {
       (*) ;;
     esac
   else
-    [[ $LASTWIDGET == afu+* ]] && {
+    [[ $LASTWIDGET == afu+*~afu+complete-word ]] && {
       afu_in_p=0; BUFFER="$buffer_cur"
     }
     zle complete-word
