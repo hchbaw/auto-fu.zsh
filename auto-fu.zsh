@@ -85,6 +85,13 @@
 # TODO: sometimes, extra <TAB> key yields $buffer_cur as the BUFFER.
 # TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
 # TODO: http://~/, origin/ ⇒ yields extra '/'. Dig into each completer or tag.
+# TODO: <TAB> key yields previous result. ex) if there is only '.zshrc',
+# % vim .zshr<TAB> <TAB> ⇒ the first <TAB> inserts .zshrc as expected. Then
+# the second <TAB> inserts extra '.zshrc' into the BUFFER. In this case menu
+# select or something other than inserting the previous result is expected.
+# TODO: indicate exact match if possible.
+# TODO: for the screen estate, postdisplay could be cleared if it could be,
+# after accepted etc.
 
 # History
 
