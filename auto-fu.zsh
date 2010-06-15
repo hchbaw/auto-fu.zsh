@@ -72,6 +72,7 @@
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
 
+# TODO: http://~/ origin/ ⇒ yields extra '/'. vs directory
 # TODO: refine afu-able-space-p or better.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: handle RBUFFER.
@@ -366,10 +367,8 @@ afu+complete-word () {
     case $LBUFFER[-1] in
       (=) # --prefix= ⇒ complete-word again for `magic-space'ing the suffix
         zle complete-word ;;
-      (/) # path-ish  ⇒ propagate auto-fu if *-directories
-        zle complete-word
-        [[ -n ${(M)${(@z)"${_lastcomp[tags]}"}:#*-directories} ]] &&
-          zle -U "$LBUFFER[-1]" ;;
+      (/) # path-ish  ⇒ propagate auto-fu
+        zle complete-word; zle -U "$LBUFFER[-1]";;
       (,) # glob-ish  ⇒ activate the `complete-word''s suffix
         BUFFER="$buffer_cur"; zle complete-word ;;
       (*)
