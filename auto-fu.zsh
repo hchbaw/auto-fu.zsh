@@ -181,7 +181,7 @@ afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 
 afu-install afu-keymap+widget
 function () {
-  [[ -z $AUTO_FU_NOCP ]] || return
+  [[ -z ${AUTO_FU_NOCP-} ]] || return
   # For backward compatibility
   zstyle ':auto-fu:highlight' input bold
   zstyle ':auto-fu:highlight' completion fg=black,bold
@@ -193,7 +193,7 @@ declare -a afu_accept_lines
 afu-recursive-edit-and-accept () {
   local -a __accepted
   zle recursive-edit -K afu || { zle send-break; return }
-  (( ${#${(M)afu_accept_lines:#${__accepted[0]}}} > 1 )) &&
+  (( ${#${(M)afu_accept_lines:#${__accepted[1]}}} > 1 )) &&
   { zle "${__accepted[@]}"} || { zle accept-line }
 }
 
@@ -302,7 +302,7 @@ afu-able-p () {
 }
 
 afu-able-space-p () {
-  [[ -z $AUTO_FU_NOCP ]] &&
+  [[ -z ${AUTO_FU_NOCP-} ]] &&
     # For backward compatibility.
     { [[ "$WIDGET" == "magic-space" ]] || return 1 }
 
@@ -396,7 +396,7 @@ afu+complete-word () {
 }
 zle -N afu+complete-word
 
-[[ -z $afu_zcompiling_p ]] && unset afu_zles
+[[ -z ${afu_zcompiling_p-} ]] && unset afu_zles
 
 # NOTE: This is iffy. It dumps the necessary functions into ~/.zsh/auto-fu,
 # then zrecompiles it into ~/.zsh/auto-fu.zwc.
@@ -455,7 +455,7 @@ auto-fu-zcompile () {
   echo -n '* '; autoload -U zrecompile && zrecompile -p -R ${g} && {
     zmodload zsh/datetime
     touch --date="$(strftime "%F %T" $((EPOCHSECONDS - 120)))" ${g}
-    [[ -z $AUTO_FU_ZCOMPILE_NOKEEP ]] || { echo "rm -f ${g}" | sh -x }
+    [[ -z ${AUTO_FU_ZCOMPILE_NOKEEP-} ]] || { echo "rm -f ${g}" | sh -x }
     echo "** All done."
     echo "** Please update your .zshrc to load the zcompiled file like this,"
     cat <<EOT
