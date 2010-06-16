@@ -1,0 +1,20 @@
+#!zsh
+
+declare F="${1}"
+declare -a T
+: ${(A)T::=${${${(ps:\n#:)${${"$(<$F)"}%# Code*}#\#}}}}
+: ${(A)T::=${T# }}
+: ${(A)T::=${T//\\n/\\\\n}}
+: ${(A)T::=${T//</&lt;}}
+: ${(A)T::=${T//>/&gt;}}
+: ${(A)T::=${T//8&lt;/>8}}
+: ${(A)T::=${T//&gt;8/8<}}
+
+print -l $T[1]; shift T
+
+cat <<"EOT"
+<img src="http://github.com/hchbaw/auto-fu.zsh/raw/master/auto-fu.gif" />
+
+EOT
+print -l $T
+
