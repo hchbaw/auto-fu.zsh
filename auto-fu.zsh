@@ -89,6 +89,10 @@
 
 # History
 
+# v0.0.1.6
+# Fix `parameter not set`. Thank you very much for the report, Shougo!
+# Bug fix.
+
 # v0.0.1.5
 # afu+complete-word bug (direvtory vs others) fix.
 
