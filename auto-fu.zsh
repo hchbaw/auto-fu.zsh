@@ -85,7 +85,7 @@
 # TODO: indicate exact match if possible.
 # TODO: for the screen estate, postdisplay could be cleared if it could be,
 # after accepted etc.
-# TODO: *-directories may not be enough.
+# TODO: *-directories|all-files may not be enough.
 
 # History
 
@@ -370,9 +370,9 @@ afu+complete-word () {
     case $LBUFFER[-1] in
       (=) # --prefix= ⇒ complete-word again for `magic-space'ing the suffix
         zle complete-word ;;
-      (/) # path-ish  ⇒ propagate auto-fu if *-directories
-        { # TODO: *-directories is enough?
-          local x="${(M)${(@z)"${_lastcomp[tags]}"}:#*-directories}"
+      (/) # path-ish  ⇒ propagate auto-fu if it could be
+        { # TODO: this may not be enough.
+          local x="${(M)${(@z)"${_lastcomp[tags]}"}:#(*-directories|all-files)}"
           zle complete-word
           [[ -n $x ]] && zle -U "$LBUFFER[-1]"
         };;
