@@ -33,33 +33,35 @@
 
 # Configuration
 # The auto-fu features can be configured via zstyle.
-# :auto-fu:highlight
-#   input
-#     A highlight specification used for user input string.
-#   completion
-#     A highlight specification used for completion string.
-# :auto-fu:var
-#   postdisplay
-#     An initial indication string for POSTDISPLAY in auto-fu-init.
-#   enable
-#     A list of zle widget names the automatic complete-word and
-#     list-choices to be triggered after its invocation.
-#     Only with ALL in 'enable', the 'disable' style has any effect.
-#     ALL by default.
-#   disable
-#     A list of zle widget names you do *NOT* want the complete-word to be
-#     triggered. Only used if 'enable' contains ALL. For example,
-#       zstyle ':auto-fu:var' enable all
-#       zstyle ':auto-fu:var' disable magic-space
-#     yields; complete-word will not be triggered after pressing the
-#     space-bar, otherwise automatic thing will be taken into account.
+
+#     :auto-fu:highlight
+#       input
+#         A highlight specification used for user input string.
+#       completion
+#         A highlight specification used for completion string.
+#     :auto-fu:var
+#       postdisplay
+#         An initial indication string for POSTDISPLAY in auto-fu-init.
+#       enable
+#         A list of zle widget names the automatic complete-word and
+#         list-choices to be triggered after its invocation.
+#         Only with ALL in 'enable', the 'disable' style has any effect.
+#         ALL by default.
+#       disable
+#         A list of zle widget names you do *NOT* want the complete-word to be
+#         triggered. Only used if 'enable' contains ALL. For example,
+#           zstyle ':auto-fu:var' enable all
+#           zstyle ':auto-fu:var' disable magic-space
+#         yields; complete-word will not be triggered after pressing the
+#         space-bar, otherwise automatic thing will be taken into account.
+
 # Configuration example
-# -- >8 --
-# zstyle ':auto-fu:highlight' input bold
-# zstyle ':auto-fu:highlight' completion fg=black,bold
-# zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
-# #zstyle ':auto-fu:var' disable magic-space
-# -- 8< --
+
+#     zstyle ':auto-fu:highlight' input bold
+#     zstyle ':auto-fu:highlight' completion fg=black,bold
+#     zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+#     #zstyle ':auto-fu:var' disable magic-space
+
 
 # XXX: use with the error correction or _match completer.
 # If you got the correction errors during auto completing the word, then
@@ -110,6 +112,8 @@
 
 # v0.0.1
 # Initial version.
+
+# Code
 
 afu_zles=( \
   # Zle widgets should be rebinded in the afu keymap. `auto-fu-maybe' to be
