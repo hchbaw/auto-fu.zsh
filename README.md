@@ -11,26 +11,26 @@ Thank you very much y.fujii!
 Adapted by Takeshi Banse &lt;takebi@laafc.net&gt;
 I want to use it with menu selection.
 
-To use this,
+>To use this,
 >1) source this file.
-% source auto-fu.zsh
-2) establish `zle-line-init' containing `auto-fu-init' something like below.
-% zle-line-init () {auto-fu-init;}; zle -N zle-line-init
-3) use the _oldlist completer something like below.
-% zstyle ':completion:*' completer _oldlist _complete
-(If you have a lot of completer, please insert _oldlist before _complete.)
-*Optionally* you can use the zcompiled file for a little faster loading on
-every shell startup, if you zcompile the necessary functions.
-*1) zcompile the defined functions. (generates ~/.zsh/auto-fu.zwc)
-% A=/path/to/auto-fu.zsh; (zsh -c "source $A ; auto-fu-zcompile $A ~/.zsh")
-*2) source the zcompiled file instead of this file and some tweaks.
-% source ~/.zsh/auto-fu; auto-fu-install
-*3) establish `zle-line-init' and such (same as a few lines above).
-Note:
-It is approximately *(6~10) faster if zcompiled, according to this result :)
-TIMEFMT="%*E %J"
-0.041 ( source ./auto-fu.zsh; )
-0.004 ( source ~/.zsh/auto-fu; auto-fu-install; )
+>% source auto-fu.zsh
+>2) establish `zle-line-init' containing `auto-fu-init' something like below.
+>% zle-line-init () {auto-fu-init;}; zle -N zle-line-init
+>3) use the _oldlist completer something like below.
+>% zstyle ':completion:*' completer _oldlist _complete
+>(If you have a lot of completer, please insert _oldlist before _complete.)
+>*Optionally* you can use the zcompiled file for a little faster loading on
+>every shell startup, if you zcompile the necessary functions.
+>*1) zcompile the defined functions. (generates ~/.zsh/auto-fu.zwc)
+>% A=/path/to/auto-fu.zsh; (zsh -c "source $A ; auto-fu-zcompile $A ~/.zsh")
+>*2) source the zcompiled file instead of this file and some tweaks.
+>% source ~/.zsh/auto-fu; auto-fu-install
+>*3) establish `zle-line-init' and such (same as a few lines above).
+>Note:
+>It is approximately *(6~10) faster if zcompiled, according to this result :)
+>TIMEFMT="%*E %J"
+>0.041 ( source ./auto-fu.zsh; )
+>0.004 ( source ~/.zsh/auto-fu; auto-fu-install; )
 
 Configuration
 The auto-fu features can be configured via zstyle.
