@@ -97,7 +97,7 @@
 # Bug fix.
 
 # v0.0.1.5
-# afu+complete-word bug (direvtory vs others) fix.
+# afu+complete-word bug (directory vs others) fix.
 
 # v0.0.1.4
 # afu+complete-word bug fixes.
