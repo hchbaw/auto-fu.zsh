@@ -92,6 +92,10 @@
 
 # History
 
+# v0.0.1.7
+# Fix "no such keymap `isearch'" error.
+# Thank you very much for the report, mooz and Shougo!
+
 # v0.0.1.6
 # Fix `parameter not set`. Thank you very much for the report, Shougo!
 # Bug fix.
