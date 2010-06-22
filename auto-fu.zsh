@@ -77,6 +77,7 @@
 # TODO: README
 # TODO: refine afu-able-space-p or better.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
+# TODO: pause auto stuff until something happens. ("next magic-space" etc)
 # TODO: handle RBUFFER.
 # TODO: signal handling during the recursive edit.
 # TODO: add afu-viins/afu-vicmd keymaps.
@@ -89,6 +90,9 @@
 # TODO: for the screen estate, postdisplay could be cleared if it could be,
 # after accepted etc.
 # TODO: *-directories|all-files may not be enough.
+# TODO: postdisplay should be cleared properly after the `send-break`ing.
+# TODO: kill-word and yank should be added to the afu_zles.
+# TODO: recommend zcompiling.
 
 # History
 
