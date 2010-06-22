@@ -75,7 +75,6 @@
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
 
 # TODO: README
-# TODO: ensure isearch keymap existence.
 # TODO: refine afu-able-space-p or better.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: handle RBUFFER.
@@ -136,9 +135,15 @@ autoload +X keymap+widget
 }
 
 afu-install () {
-  bindkey -M isearch "^M" afu+accept-line
-
-  afu-install-eof
+  zstyle -t ':auto-fu:var' misc-installed-p || {
+    zmodload zsh/parameter 2>/dev/null || {
+      echo 'auto-fu:zmodload error. exiting.' >&2; exit -1
+    }
+    afu-install-isearchmap
+    afu-install-eof
+  } always {
+    zstyle ':auto-fu:var' misc-installed-p yes
+  }
 
   bindkey -N afu emacs
   { "$@" }
@@ -153,11 +158,18 @@ afu-install () {
   bindkey -M afu-vicmd  "i" afu+vi-ins-mode
 }
 
+afu-install-isearchmap () {
+  zstyle -t ':auto-fu:var' isearchmap-installed-p || {
+    [[ -n ${(M)keymaps:#isearch} ]] && bindkey -M isearch "^M" afu+accept-line
+  } always {
+    zstyle ':auto-fu:var' isearchmap-installed-p yes
+  }
+}
+
 afu-install-eof () {
   zstyle -t ':auto-fu:var' eof-installed-p || {
     # fiddle the main(emacs) keymap. The assumption is it propagates down to
     # the afu keymap afterwards.
-    zmodload zsh/parameter
     if [[ "$options[ignoreeof]" == "on" ]]; then
       bindkey "^D" afu+orf-ignoreeof-deletechar-list
     else
