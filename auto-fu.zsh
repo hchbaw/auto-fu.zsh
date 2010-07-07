@@ -84,14 +84,12 @@
 # TODO: handle empty or space characters.
 # TODO: cp x /usr/loc
 # TODO: region_highlight vs afu-able-p → nil
-# TODO: region_highlight vs paste
 # TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
 # TODO: indicate exact match if possible.
 # TODO: for the screen estate, postdisplay could be cleared if it could be,
 # after accepted etc.
 # TODO: *-directories|all-files may not be enough.
 # TODO: postdisplay should be cleared properly after the `send-break`ing.
-# TODO: kill-word and yank should be added to the afu_zles.
 # TODO: recommend zcompiling.
 # TODO: undo should be reset the auto stuff's state.
 # TODO: when `_match`ing,
@@ -132,7 +130,7 @@ afu_zles=( \
   # Zle widgets should be rebinded in the afu keymap. `auto-fu-maybe' to be
   # called after it's invocation, see `afu-initialize-zle-afu'.
   self-insert backward-delete-char backward-kill-word kill-line \
-  kill-whole-line magic-space \
+  kill-whole-line kill-word magic-space yank \
 )
 
 autoload +X keymap+widget
