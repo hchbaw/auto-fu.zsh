@@ -93,6 +93,10 @@
 # TODO: postdisplay should be cleared properly after the `send-break`ing.
 # TODO: kill-word and yank should be added to the afu_zles.
 # TODO: recommend zcompiling.
+# TODO: undo should be reset the auto stuff's state.
+# TODO: when `_match`ing,
+# sometimes extra <TAB> key is needed to enter the menu select,
+# sometimes is *not* needed. (already be entered menu select state.)
 
 # History
 
