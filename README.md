@@ -1,6 +1,6 @@
 zsh automatic complete-word and list-choices
 
-<img src="http://github.com/hchbaw/auto-fu.zsh/raw/master/auto-fu.gif" />
+<img src="http://github.com/hchbaw/auto-fu.zsh/raw/readme/auto-fu.gif" />
 
 Originally incr-0.2.zsh
 Incremental completion for zsh
