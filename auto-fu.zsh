@@ -42,6 +42,9 @@
 #     :auto-fu:var
 #       postdisplay
 #         An initial indication string for POSTDISPLAY in auto-fu-init.
+#       postdisplay/clearp
+#         If set, POSTDISPLAY will be cleared after the accept-lines.
+#         'yes' by default.
 #       enable
 #         A list of zle widget names the automatic complete-word and
 #         list-choices to be triggered after its invocation.
@@ -86,10 +89,7 @@
 # TODO: region_highlight vs afu-able-p → nil
 # TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
 # TODO: indicate exact match if possible.
-# TODO: for the screen estate, postdisplay could be cleared if it could be,
-# after accepted etc.
 # TODO: *-directories|all-files may not be enough.
-# TODO: postdisplay should be cleared properly after the `send-break`ing.
 # TODO: recommend zcompiling.
 # TODO: undo should be reset the auto stuff's state.
 # TODO: when `_match`ing,
@@ -224,7 +224,7 @@ declare -a afu_accept_lines
 
 afu-recursive-edit-and-accept () {
   local -a __accepted
-  zle recursive-edit -K afu || { zle send-break; return }
+  zle recursive-edit -K afu || { afu-reset; zle -R ''; zle send-break; return }
   (( ${#${(M)afu_accept_lines:#${__accepted[1]}}} > 1 )) &&
   { zle "${__accepted[@]}"} || { zle accept-line }
 }
@@ -240,6 +240,7 @@ afu-register-zle-accept-line () {
       zstyle -s ':auto-fu:highlight' input hi
       [[ -z ${hi} ]] || region_highlight=("0 ${#BUFFER} ${hi}")
     }
+    zstyle -T ':auto-fu:var' postdisplay/clearp && POSTDISPLAY=''
     return 0
   }
   zle -N $afufun
@@ -289,6 +290,13 @@ afu-clearing-maybe () {
     [[ "$BUFFER" != "$buffer_new" ]] || ((CURSOR != cursor_cur)) &&
     { afu_in_p=0 }
   fi
+}
+
+afu-reset () {
+  region_highlight=()
+  afu_in_p=0
+  local ps; zstyle -s ':auto-fu:var' postdisplay ps
+  [[ -z ${ps} ]] || POSTDISPLAY=''
 }
 
 with-afu () {
