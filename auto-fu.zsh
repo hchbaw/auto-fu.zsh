@@ -358,6 +358,12 @@ auto-fu-maybe () {
   { auto-fu }
 }
 
+with-afu-compfuncs () {
+  compprefuncs=(afu-comppre)
+  comppostfuncs=(afu-comppost)
+  "$@"
+}
+
 auto-fu () {
   emulate -L zsh
   unsetopt rec_exact
@@ -365,10 +371,10 @@ auto-fu () {
 
   cursor_cur="$CURSOR"
   buffer_cur="$BUFFER"
-  comppostfuncs=(afu-k)
-  zle complete-word
+  with-afu-compfuncs zle complete-word
   cursor_new="$CURSOR"
   buffer_new="$BUFFER"
+
   if [[ "$buffer_cur[1,cursor_cur]" == "$buffer_new[1,cursor_cur]" ]];
   then
     CURSOR="$cursor_cur"
@@ -382,7 +388,7 @@ auto-fu () {
     then afu_in_p=1; {
       local BUFFER="$buffer_cur"
       local CURSOR="$cursor_cur"
-      zle list-choices
+      with-afu-compfuncs zle list-choices
     }
     fi
   else
@@ -393,7 +399,9 @@ auto-fu () {
 }
 zle -N auto-fu
 
-function afu-k () {
+afu-comppre () {}
+
+afu-comppost () {
   ((compstate[list_lines] + BUFFERLINES + 2 > LINES)) && { 
     compstate[list]=''
     zle -M "$compstate[list_lines]($compstate[nmatches]) too many matches..."
@@ -404,7 +412,7 @@ afu+complete-word () {
   afu-clearing-maybe
   { afu-able-p } || { zle complete-word; return; }
 
-  comppostfuncs=(afu-k)
+  with-afu-compfuncs;
   if ((afu_in_p == 1)); then
     afu_in_p=0; CURSOR="$cursor_new"
     case $LBUFFER[-1] in
