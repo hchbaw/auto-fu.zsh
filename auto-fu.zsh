@@ -39,6 +39,9 @@
 #         A highlight specification used for user input string.
 #       completion
 #         A highlight specification used for completion string.
+#       completion/one
+#         A highlight specification used for completion string if it is the
+#         only one candidate.
 #     :auto-fu:var
 #       postdisplay
 #         An initial indication string for POSTDISPLAY in auto-fu-init.
@@ -62,6 +65,7 @@
 
 #     zstyle ':auto-fu:highlight' input bold
 #     zstyle ':auto-fu:highlight' completion fg=black,bold
+#     zstyle ':auto-fu:highlight' completion/one fg=white,bold,underline
 #     zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
 #     #zstyle ':auto-fu:var' disable magic-space
 
@@ -88,7 +92,6 @@
 # TODO: cp x /usr/loc
 # TODO: region_highlight vs afu-able-p → nil
 # TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
-# TODO: indicate exact match if possible.
 # TODO: *-directories|all-files may not be enough.
 # TODO: recommend zcompiling.
 # TODO: undo should be reset the auto stuff's state.
@@ -217,6 +220,7 @@ function () {
   # For backward compatibility
   zstyle ':auto-fu:highlight' input bold
   zstyle ':auto-fu:highlight' completion fg=black,bold
+  zstyle ':auto-fu:highlight' completion/one fg=whilte,bold,underline
   zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
 }
 
@@ -379,9 +383,14 @@ auto-fu () {
   then
     CURSOR="$cursor_cur"
     {
-      local hi
-      zstyle -s ':auto-fu:highlight' completion hi
-      [[ -z ${hi} ]] || region_highlight=("$CURSOR $cursor_new ${hi}")
+      local hi hiv
+      [[ $afu_one_match_p == t ]] && hi=completion/one || hi=completion
+      zstyle -s ':auto-fu:highlight' "$hi" hiv
+      [[ -z ${hiv} ]] || {
+        local -i end=$cursor_new
+        [[ $BUFFER[$cursor_new] == ' ' ]] && (( end-- ))
+        region_highlight=("$CURSOR $end ${hiv}")
+      }
     }
 
     if [[ "$buffer_cur" != "$buffer_new" ]] || ((cursor_cur != cursor_new))
@@ -406,6 +415,9 @@ afu-comppost () {
     compstate[list]=''
     zle -M "$compstate[list_lines]($compstate[nmatches]) too many matches..."
   }
+
+  typeset -g afu_one_match_p=
+  (( $compstate[nmatches] == 1 )) && afu_one_match_p=t
 }
 
 afu+complete-word () {
@@ -513,6 +525,7 @@ auto-fu-zcompile () {
 { . ${g/$HOME/~}; auto-fu-install; }
 zstyle ':auto-fu:highlight' input bold
 zstyle ':auto-fu:highlight' completion fg=black,bold
+zstyle ':auto-fu:highlight' completion/one fg=white,bold,underline
 zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
 zle-line-init () {auto-fu-init;}; zle -N zle-line-init
 -- 8< --
