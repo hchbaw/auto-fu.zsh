@@ -432,7 +432,9 @@ afu+complete-word () {
         zle complete-word ;;
       (/) # path-ish  ⇒ propagate auto-fu if it could be
         { # TODO: this may not be enough.
-          local x="${(M)${(@z)"${_lastcomp[tags]}"}:#(*-directories|all-files)}"
+          local y=${AUTO_FU_PATHITH:-
+            "((*-)#directories|all-files|(command|executable)s)"}
+          local x=${(M)${(@z)"${_lastcomp[tags]}"}:#${~y}}
           zle complete-word
           [[ -n $x ]] && zle -U "$LBUFFER[-1]"
         };;
