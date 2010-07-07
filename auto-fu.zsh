@@ -101,6 +101,10 @@
 
 # History
 
+# v0.0.1.8
+# add completion/one and postdisplay/clearp configurations.
+# add kill-word and yank to afu_zles.
+
 # v0.0.1.7
 # Fix "no such keymap `isearch'" error.
 # Thank you very much for the report, mooz and Shougo!
