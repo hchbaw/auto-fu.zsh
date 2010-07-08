@@ -80,7 +80,6 @@
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
 
-# TODO: cannot traverse directory smoothly.
 # TODO: README
 # TODO: refine afu-able-space-p or better.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
@@ -439,9 +438,9 @@ afu+complete-word () {
         zle complete-word ;;
       (/) # path-ish  ⇒ propagate auto-fu if it could be
         { # TODO: this may not be enough.
-          local y=${AUTO_FU_PATHITH:-
-            "((*-)#directories|all-files|(command|executable)s)"}
-          local x=${(M)${(@z)"${_lastcomp[tags]}"}:#${~y}}
+          local y="((*-)#directories|all-files|(command|executable)s)"
+          y=${AUTO_FU_PATHITH:-${y}}
+          local -a x; x=${(M)${(@z)"${_lastcomp[tags]}"}:#${~y}}
           zle complete-word
           [[ -n $x ]] && zle -U "$LBUFFER[-1]"
         };;
