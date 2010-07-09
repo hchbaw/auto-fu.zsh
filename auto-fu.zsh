@@ -1016,17 +1016,29 @@ zle -N afu+complete-word afu+complete-word~~
 afu-install-tracking-completer () {
   local funname="$1"
   local varname="$2"
+  local nozerop="${3:-}"
   local completer=${funname#_afu}
   eval "$(cat <<EOT
     $funname () {
+      local ret=
       $varname=
+
       $completer
-      (( \$? == 0 )) && $varname=t
+      ret=\$?
+
+      if [[ -n "$nozerop" ]]; then
+        $varname=\$ret
+      else
+        (( ret == 0 )) && $varname=t
+      fi
+
+      return ret
     }
 EOT
   )"
 }
 afu-install-tracking-completer _afu_approximate afu_approximate_correcting_p
+afu-install-tracking-completer _afu_match afu_match_ret t
 
 autoload +X keymap+widget
 
