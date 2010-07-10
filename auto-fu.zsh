@@ -610,6 +610,35 @@ afu-reset () {
   [[ -z ${ps} ]] || POSTDISPLAY=''
 }
 
+with-afu-semantics () {
+  # tracking last function is the afu+complete-word or not.
+  # see also with-afu-match-handling
+  local afucompletewordp="${1-}"
+  last_afucompleteword_p=
+  if [[ -n ${afu_complete_word-} ]]; then
+    last_afucompleteword_p=t
+    afu_complete_word=
+  fi
+  afu_complete_word="${afucompletewordp}"
+
+  # tracking last afu_approximate_correcting_p or not.
+  # see also with-afu-match-handling
+  last_afuapproximatecorrecting_p=
+  if [[ -n ${afu_approximate_correcting_p-} ]]; then
+    last_afuapproximatecorrecting_p=t
+    afu_approximate_correcting_p=
+  fi
+
+  # tracking current _completer value stored inside the completer
+  # see also with-afu-match-handling and afu-comppost
+  afu_curcompleter=
+
+  # see also corresponding completer function.
+  # _afu_approximate and afu_match.
+  afu_approximate_correcting_p=
+  afu_match_ret=
+}
+
 # XXX: see also with-afu-region-highlight-saving
 # XXX: see also afu-register-zle-afu-override
 # XXX: see also afu-initialize-zle-misc
@@ -857,7 +886,7 @@ afu-autoable-skipline-p () {
 auto-fu-maybe () {
   local ret=-1
   (($PENDING== 0)) && { afu-able-p } && [[ $LBUFFER != *$'\012'*  ]] &&
-  { auto-fu; ret=0 }
+  { with-afu-match-handling auto-fu; ret=0 }
   return ret
 }
 
@@ -873,8 +902,10 @@ with-afu-completer-vars () {
   with-afu-compfuncs "$@"
 }
 
-auto-fu () {
-  local inserts="(*approximate|match)"
+with-afu-match-handling () {
+  local fn="$1"
+  local inserts="*(approximate|match)"
+
   # being propagated from `afu+complete-word` then
   # `_match|_approximate|etc. ⇒ select something` or not.
   [[ "${afu_curcompleter-}" == ${~inserts} ]] &&
@@ -883,13 +914,43 @@ auto-fu () {
     return
   }
 
+  local force_menuselect_off_p=
+  (( $+functions[afu-handle-match-buffer] )) &&
+  [[ -z ${AUTO_FU_NOFUNCMEMO-} ]] ||
+  afu-handle-match-buffer () {
+    # `_match|_approximate|etc. ⇒ select something` or not.
+    [[ "${afu_curcompleter-}" == ${~inserts} ]] && {
+      [[ $KEYS[-1] == ' ' ]]     ||
+      [[ $KEYS[-1] == $'\015' ]] ||
+      [[ $KEYS[-1] == $'\012' ]] || {
+        [[ $LBUFFER[-1] == $KEYS[-1] ]] &&
+        [[ $LBUFFER[-1] == '/' ]] && {
+          # path-ish ⇒ propagate complete-word by editing LBUFFER
+          [[ -n ${afu_match_ret-} ]] ||
+          [[ -n ${afu_approximate_correcting_p-} ]]
+        } && { LBUFFER=$LBUFFER[1,-2]; force_menuselect_off_p=t }
+      }
+    }
+  }
+  $fn afu-handle-match-buffer
+
+  # forcibly enter the menuselect state.
+  [[ -n ${last_afuapproximatecorrecting_p-} ]] && return
+  [[ -z ${last_afucompleteword_p-} ]] &&
+  [[ -z ${force_menuselect_off_p}  ]] &&
+  [[ -z ${afu_one_match_p-}        ]] &&
+  [[ -n ${afu_match_ret-}          ]] &&
+  (( afu_match_ret != 0 )) &&
+  { with-afu-compfuncs zle complete-word }
+}
+
+auto-fu () {
   cursor_cur="$CURSOR"
   buffer_cur="$BUFFER"
   with-afu-region-highlight-saving with-afu-completer-vars zle complete-word
   cursor_new="$CURSOR"
   buffer_new="$BUFFER"
 
-  local force_menuselect_off_p=
   if [[ "$buffer_cur[1,cursor_cur]" == "$buffer_new[1,cursor_cur]" ]];
   then
     CURSOR="$cursor_cur"
@@ -913,28 +974,12 @@ auto-fu () {
     }
     fi
   else
-    # `_match|_approximate|etc. ⇒ select something` or not.
-    [[ "${afu_curcompleter-}" == ${~inserts} ]] && {
-      [[ $KEYS[-1] == ' ' ]]     ||
-      [[ $KEYS[-1] == $'\015' ]] ||
-      [[ $KEYS[-1] == $'\012' ]] || {
-        [[ $LBUFFER[-1] == $KEYS[-1] ]] && {
-          [[ -n ${afu_pattern_matching_p-} ]] ||
-          [[ -n ${afu_approximate_correcting_p-} ]]
-        } && { LBUFFER=$LBUFFER[1,-2]; force_menuselect_off_p=t }
-      }
-    } || {
+    local keepbufferp="$1"; { $keepbufferp } || {
       BUFFER="$buffer_cur"
       CURSOR="$cursor_cur"
       with-afu-completer-vars zle list-choices
     }
   fi
-
-  # forcibly enter the menuselect state.
-  [[ -z ${force_menuselect_off_p} ]] &&
-  [[ -n ${afu_pattern_matching_p-} ]] &&
-  [[ -z ${afu_one_match_p-} ]] &&
-  { with-afu-compfuncs zle complete-word }
 }
 zle -N auto-fu
 
@@ -946,11 +991,13 @@ afu-comppre () {
     compstate[old_list]=
     compstate[insert]=automenu-unambiguous
   }
-  typeset -g afu_pattern_matching_p=
-  local tmp="${${:-$PREFIX$SUFFIX}#[~=]}"
-  [[ "$tmp:q" = "$tmp" ]] && return
-  afu_pattern_matching_p=t
-  : ${(A)_completers::=${_completers:#(_afu)#_approximate}}
+  # XXX: _match + _approximate does not work as expected inside auto stuff.
+  # so, filter out _approximate if _match present.
+  [[ -n ${(M)_completers:#(_afu)#_match} ]] && {
+    local tmp="${${:-$PREFIX$SUFFIX}#[~=]}"
+    [[ "$tmp:q" = "$tmp" ]] && return
+    : ${(A)_completers::=${_completers:#(_afu)#_approximate}}
+  }
 }
 
 afu-comppost () {
@@ -968,6 +1015,7 @@ afu-comppost () {
 
 afu+complete-word () {
   afu-clearing-maybe "${1-}"
+  with-afu-semantics t;
   { afu-able-p } || { zle complete-word; return; }
 
   with-afu-completer-vars;
