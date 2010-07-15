@@ -80,7 +80,6 @@
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
 
-# TODO: explicitly pause auto stuff.
 # TODO: refine afu-able-space-p or better.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: pause auto stuff until something happens. ("next magic-space" etc)
@@ -277,6 +276,7 @@ auto-fu-init () {
   {
     local -a region_highlight
     local afu_in_p=0
+    local afu_paused_p=0
 
     zstyle -s ':auto-fu:var' postdisplay ps
     [[ -z ${ps} ]] || POSTDISPLAY="$ps"
@@ -297,9 +297,29 @@ with-afu-gvars () {
     zle -M "Sorry, can't turn on or off if auto-fu-init is in effect."; return
   }
   typeset -g afu_in_p=0
+  typeset -g afu_paused_p=0
   region_highlight=()
   "$@"
 }
+
+afu-register-zle-toggle () {
+  local var="$1"
+  local toggle="$2"
+  local activate="$3"
+  local deactivate="$4"
+  eval "$(cat <<EOT
+    $toggle () {
+      (( $var == 1 )) && { $var=0; return }
+      (( $var != 1 )) && { $var=1; return }
+    }
+    $activate () { $var=0 }
+    $deactivate () { $var=1 }
+    zle -N $toggle; zle -N $activate; zle -N $deactivate
+EOT
+  )"
+}
+afu-register-zle-toggle afu_paused_p \
+  auto-fu-toggle auto-fu-activate auto-fu-deactivate
 
 afu-clearing-maybe () {
   region_highlight=()
@@ -348,6 +368,8 @@ afu-initialize-zle-afu () {
 afu-initialize-zle-afu
 
 afu-able-p () {
+  (( afu_paused_p == 1 )) && return 1;
+
   local c=$LBUFFER[-1]
   [[ $c == ''  ]] && return 1;
   [[ $c == ' ' ]] && { afu-able-space-p || return 1 && return 0 }
