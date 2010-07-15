@@ -80,7 +80,6 @@
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
 
-# TODO: PAGER=<TAB> ⇒ PAGER=PAGER=.
 # TODO: exiplictly pause auto stuff.
 # TODO: refine afu-able-space-p or better.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
@@ -439,7 +438,10 @@ afu+complete-word () {
     afu_in_p=0; CURSOR="$cursor_new"
     case $LBUFFER[-1] in
       (=) # --prefix= ⇒ complete-word again for `magic-space'ing the suffix
-        zle complete-word ;;
+        { # TODO: this may not be accurate.
+          local x="${${(@z)LBUFFER}[-1]}"
+          [[ "$x" == -* ]] && zle complete-word && return
+        };;
       (/) # path-ish  ⇒ propagate auto-fu if it could be
         { # TODO: this may not be enough.
           local y="((*-)#directories|all-files|(command|executable)s)"
@@ -447,18 +449,19 @@ afu+complete-word () {
           local -a x; x=${(M)${(@z)"${_lastcomp[tags]}"}:#${~y}}
           zle complete-word
           [[ -n $x ]] && zle -U "$LBUFFER[-1]"
+          return
         };;
       (,) # glob-ish  ⇒ activate the `complete-word''s suffix
-        BUFFER="$buffer_cur"; zle complete-word ;;
-      (*)
-        (( $_lastcomp[nmatches]  > 1 )) &&
-          # many matches ⇒ complete-word again to enter the menuselect
-          zle complete-word
-        (( $_lastcomp[nmatches] == 1 )) &&
-          # exact match  ⇒ flag not using _oldlist for the next complete-word
-          _lastcomp[nmatches]=0
+        BUFFER="$buffer_cur"; zle complete-word;
+        return
         ;;
     esac
+    (( $_lastcomp[nmatches]  > 1 )) &&
+      # many matches ⇒ complete-word again to enter the menuselect
+      zle complete-word
+    (( $_lastcomp[nmatches] == 1 )) &&
+      # exact match  ⇒ flag not using _oldlist for the next complete-word
+      _lastcomp[nmatches]=0
   else
     [[ $LASTWIDGET == afu+*~afu+complete-word ]] && {
       afu_in_p=0; BUFFER="$buffer_cur"
