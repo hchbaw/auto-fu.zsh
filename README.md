@@ -83,7 +83,7 @@ I'm very sorry for this annonying behaviour.
 XXX: ignoreeof semantics changes for overriding ^D.
 You cannot change the ignoreeof option interactively. I'm verry sorry.
 
-TODO: README
+TODO: explicitly pause auto stuff.
 TODO: refine afu-able-space-p or better.
 TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 TODO: pause auto stuff until something happens. ("next magic-space" etc)
@@ -102,6 +102,10 @@ sometimes extra &lt;TAB&gt; key is needed to enter the menu select,
 sometimes is *not* needed. (already be entered menu select state.)
 
 History
+
+v0.0.1.8.3
+in afu+complete-word PAGER=&lt;TAB&gt; ⇒ PAGER=PAGER= bug fix.
+Thank you very much for the report, tyru!
 
 v0.0.1.8.2
 afu+complete-word bug fixes.
