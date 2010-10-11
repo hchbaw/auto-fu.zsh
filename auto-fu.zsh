@@ -104,7 +104,7 @@
 # Thank you very much for the report, myuhe!
 
 # v0.0.1.9
-# add auto-fu-actitivate, auto-fu-deactivate and auto-fu-toggle.
+# add auto-fu-activate, auto-fu-deactivate and auto-fu-toggle.
 
 # v0.0.1.8.3
 # in afu+complete-word PAGER=<TAB> ⇒ PAGER=PAGER= bug fix.
@@ -456,7 +456,7 @@ zle -N auto-fu
 afu-comppre () {}
 
 afu-comppost () {
-  ((compstate[list_lines] + BUFFERLINES + 2 > LINES)) && { 
+  ((compstate[list_lines] + BUFFERLINES + 2 > LINES)) && {
     compstate[list]=''
     zle -M "$compstate[list_lines]($compstate[nmatches]) too many matches..."
   }
