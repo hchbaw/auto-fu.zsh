@@ -935,13 +935,12 @@ with-afu-menuselecting-handling () {
   $fn afu-handle-menuselecting-buffer-keep-p
 
   # forcibly enter the menuselect state.
-  [[ "${afu_curcompleter-}" == "ignored" ]] && return
+  [[ "${afu_curcompleter-}" == ignored ]] && return
   [[ -n ${last_afuapproximatecorrecting_p-} ]] && return
   [[ -z ${last_afucompleteword_p-} ]] &&
   [[ -z ${force_menuselect_off_p}  ]] &&
   [[ -z ${afu_one_match_p-}        ]] &&
   [[ -n ${afu_match_ret-}          ]] &&
-  (( afu_match_ret != 0 )) &&
   { with-afu-compfuncs zle complete-word }
 }
 
