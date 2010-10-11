@@ -102,6 +102,10 @@ sometimes is *not* needed. (already be entered menu select state.)
 
 History
 
+v0.0.1.10
+Fix not work auto-thing without extended_glob.
+Thank you very much for the report, myuhe!
+
 v0.0.1.9
 add auto-fu-actitivate, auto-fu-deactivate and auto-fu-toggle.
 
