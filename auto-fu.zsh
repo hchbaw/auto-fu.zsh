@@ -610,7 +610,7 @@ afu-reset () {
   [[ -z ${ps} ]] || POSTDISPLAY=''
 }
 
-with-afu-completer-trackings () {
+with-afu-completer-tracking () {
   # tracking last function is the afu+complete-word or not.
   # see also with-afu-match-handling
   local afucompletewordp="${1-}"
@@ -702,7 +702,7 @@ with-afu () {
   local zlefun="$1"; shift
   local -a zs
   : ${(A)zs::=$@}
-  with-afu-completer-trackings;
+  with-afu-completer-tracking;
   afu-clearing-maybe "$clearp"
   ((afu_in_p == 1)) && { afu_in_p=0; BUFFER="$buffer_cur" }
   with-afu-region-highlight-saving zle $zlefun && {
@@ -886,7 +886,7 @@ afu-autoable-skipline-p () {
 auto-fu-maybe () {
   local ret=-1
   (($PENDING== 0)) && { afu-able-p } && [[ $LBUFFER != *$'\012'*  ]] &&
-  { with-afu-match-handling auto-fu; ret=0 }
+  { with-afu-menuselecting-handling auto-fu; ret=0 }
   return ret
 }
 
@@ -902,7 +902,7 @@ with-afu-completer-vars () {
   with-afu-compfuncs "$@"
 }
 
-with-afu-match-handling () {
+with-afu-menuselecting-handling () {
   local fn="$1"
   local inserts="*(approximate|match)"
 
@@ -915,24 +915,24 @@ with-afu-match-handling () {
   }
 
   local force_menuselect_off_p=
-  (( $+functions[afu-handle-match-buffer] )) &&
+  (( $+functions[afu-handle-menuselecting-buffer-keep-p] )) &&
   [[ -z ${AUTO_FU_NOFUNCMEMO-} ]] ||
-  afu-handle-match-buffer () {
+  afu-handle-menuselecting-buffer-keep-p () {
     # `_match|_approximate|etc. ⇒ select something` or not.
     [[ "${afu_curcompleter-}" == ${~inserts} ]] && {
-      [[ $KEYS[-1] == ' ' ]]     ||
-      [[ $KEYS[-1] == $'\015' ]] ||
-      [[ $KEYS[-1] == $'\012' ]] || {
+
+      [[ -n ${afu_approximate_correcting_p-} ]] &&
+      { afu-hmbk-seleted-key-p } && { force_menuselect_off_p=t; return 0 }
+
+      { afu-hmbk-seleted-key-p } || {
         [[ $LBUFFER[-1] == $KEYS[-1] ]] &&
-        [[ $LBUFFER[-1] == '/' ]] && {
+        [[ $LBUFFER[-1] == '/' ]]       && {
           # path-ish ⇒ propagate complete-word by editing LBUFFER
-          [[ -n ${afu_match_ret-} ]] ||
-          [[ -n ${afu_approximate_correcting_p-} ]]
         } && { LBUFFER=$LBUFFER[1,-2]; force_menuselect_off_p=t }
       }
     }
   }
-  $fn afu-handle-match-buffer
+  $fn afu-handle-menuselecting-buffer-keep-p
 
   # forcibly enter the menuselect state.
   [[ "${afu_curcompleter-}" == "ignored" ]] && return
@@ -945,7 +945,16 @@ with-afu-match-handling () {
   { with-afu-compfuncs zle complete-word }
 }
 
+afu-hmbk-seleted-key-p () {
+  [[ $KEYS[-1] == ' ' ]]     && return 0
+  [[ $KEYS[-1] == $'\015' ]] && return 0
+  [[ $KEYS[-1] == $'\012' ]] && return 0
+  [[ $KEYS[-1] == $'/' ]]    && return 0 # for example 'scp host:/'
+  return 1
+}
+
 auto-fu () {
+  local keepbufferp="$1"
   cursor_cur="$CURSOR"
   buffer_cur="$BUFFER"
   with-afu-region-highlight-saving with-afu-completer-vars zle complete-word
@@ -967,7 +976,7 @@ auto-fu () {
     }
 
     if [[ "$buffer_cur" != "$buffer_new" ]] || ((cursor_cur != cursor_new))
-    then afu_in_p=1; {
+    then afu_in_p=1; { $keepbufferp } || {
       local -a region_highlight; region_highlight=()
       local BUFFER="$buffer_cur"
       local CURSOR="$cursor_cur"
@@ -975,7 +984,7 @@ auto-fu () {
     }
     fi
   else
-    local keepbufferp="$1"; { $keepbufferp } || {
+    { $keepbufferp } || {
       BUFFER="$buffer_cur"
       CURSOR="$cursor_cur"
       with-afu-completer-vars zle list-choices
@@ -1022,7 +1031,7 @@ afu-comppost () {
 
 afu+complete-word () {
   afu-clearing-maybe "${1-}"
-  with-afu-completer-trackings t;
+  with-afu-completer-tracking t;
   { afu-able-p } || { zle complete-word; return; }
 
   with-afu-completer-vars;
