@@ -235,6 +235,13 @@ afu-register-zle-eof      afu+orf-exit-deletechar-list exit
 afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
 afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 
+auto-fu-zle-keymap-select () {
+  local new="${KEYMAP}"
+  local old="${1-}"
+  [[ -n $old ]] && [[ $old == afu-vicmd ]] && { zle afu+vi-ins-mode; return }
+  [[ -n $new ]] && [[ $new == afu-vicmd ]] && { region_highlight=(); return }
+}
+
 afu-install afu-keymap+widget
 function () {
   [[ -z ${AUTO_FU_NOCP-} ]] || return
@@ -581,6 +588,7 @@ zstyle ':auto-fu:highlight' completion fg=black,bold
 zstyle ':auto-fu:highlight' completion/one fg=white,bold,underline
 zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
 zle-line-init () {auto-fu-init;}; zle -N zle-line-init
+zle -N zle-keymap-select auto-fu-zle-keymap-select
 -- 8< --
 EOT
   }
