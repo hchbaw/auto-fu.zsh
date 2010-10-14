@@ -238,8 +238,12 @@ afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 auto-fu-zle-keymap-select () {
   local new="${KEYMAP}"
   local old="${1-}"
-  [[ -n $old ]] && [[ $old == afu-vicmd ]] && { zle afu+vi-ins-mode; return }
-  [[ -n $new ]] && [[ $new == afu-vicmd ]] && { region_highlight=(); return }
+  { [[ -z $old ]] || [[ -z $new ]] } && return
+
+  [[ $old == afu-vicmd  ]] && [[ $new == (main|afu) ]] &&
+  { zle afu+vi-ins-mode; return }
+
+  [[ $old == afu && $new == afu-vicmd ]] && { region_highlight=(); return }
 }
 
 afu-install afu-keymap+widget
