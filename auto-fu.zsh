@@ -921,8 +921,15 @@ with-afu-menuselecting-handling () {
     # `_match|_approximate|etc. ⇒ select something` or not.
     [[ "${afu_curcompleter-}" == ${~inserts} ]] && {
 
+      # _approximating: (just selected the candidate)
+      # keep the current buffer and do *NOT* call complete-word.
       [[ -n ${afu_approximate_correcting_p-} ]] &&
       { afu-hmbk-seleted-key-p } && { force_menuselect_off_p=t; return 0 }
+
+      # _matching: (_match completer is in use; narrowing the candidates)
+      # do *NOT* call complete-word after redrawing the current buffer with
+      # the old contents (ex: *ab*)
+      [[ -n ${afu_match_ret-} ]] && { force_menuselect_off_p=t; return 1 }
 
       { afu-hmbk-seleted-key-p } || {
         [[ $LBUFFER[-1] == $KEYS[-1] ]] &&
@@ -934,13 +941,14 @@ with-afu-menuselecting-handling () {
   }
   $fn afu-handle-menuselecting-buffer-keep-p
 
-  # forcibly enter the menuselect state.
+  # forcibly keep being the menuselecting state by calling complete-word,
+  # otherwise we have to hit the tab key once more.
   [[ "${afu_curcompleter-}" == ignored ]] && return
   [[ -n ${last_afuapproximatecorrecting_p-} ]] && return
   [[ -z ${last_afucompleteword_p-} ]] &&
   [[ -z ${force_menuselect_off_p}  ]] &&
   [[ -z ${afu_one_match_p-}        ]] &&
-  [[ -n ${afu_match_ret-}          ]] &&
+  [[ -n ${afu_match_ret-}          ]] && # TODO: does not needed?
   { with-afu-compfuncs zle complete-word }
 }
 
