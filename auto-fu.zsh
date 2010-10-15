@@ -189,7 +189,6 @@ afu-install () {
   bindkey -M afu "^X^[" afu+vi-cmd-mode
 
   bindkey -N afu-vicmd vicmd
-  bindkey -M afu-vicmd  "i" afu+vi-ins-mode
 }
 
 afu-install-isearchmap () {
