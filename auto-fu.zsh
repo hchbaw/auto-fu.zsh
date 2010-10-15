@@ -193,13 +193,16 @@
 # zstyle ':auto-fu:var' track-keymap-skip opp
 # #zstyle ':auto-fu:var' disable magic-space
 
-# XXX: use with the error correction or _match completer.
-# If you got the correction errors during auto completing the word, then
-# plese do _not_ do `magic-space` or `accept-line`. Insted please do the
-# following, `undo` and then hit <tab> or throw away the buffer altogether.
-# This applies _match completer with complex patterns, too.
+# XXX: use with the _approximate or _match completer.
+# To track these completers' state, they will be called by their name with
+# 'afu_approximate/afu_match' during the `complete-word'.
+# If you customize the styles of these completers, please update them.
+# For example,
+# -- >8 --
+# #zstyle ':completion:*:match:*' match-original 'only'
+# zstyle ':completion:*:*match:*' match-original 'only'
+# -- 8< --              ^ *Please notice here*
 # I'm very sorry for this annonying behaviour.
-# (For example, 'ls --bbb' and 'ls --*~^*al*' etc.)
 
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
