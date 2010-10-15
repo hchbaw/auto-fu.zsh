@@ -17,6 +17,9 @@
 # 3) use the _oldlist completer something like below.
 # % zstyle ':completion:*' completer _oldlist _complete
 # (If you have a lot of completer, please insert _oldlist before _complete.)
+# 4) establish `zle-keymap-select' containing `auto-fu-zle-keymap-select'.
+# % zle -N zle-keymap-select auto-fu-zle-keymap-select
+# (This enables the afu-vicmd keymap switching coordinates a bit.)
 #
 # *Optionally* you can use the zcompiled file for a little faster loading on
 # every shell startup, if you zcompile the necessary functions.
@@ -85,7 +88,6 @@
 # TODO: pause auto stuff until something happens. ("next magic-space" etc)
 # TODO: handle RBUFFER.
 # TODO: signal handling during the recursive edit.
-# TODO: add afu-viins/afu-vicmd keymaps.
 # TODO: handle empty or space characters.
 # TODO: cp x /usr/loc
 # TODO: region_highlight vs afu-able-p → nil
