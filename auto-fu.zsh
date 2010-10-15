@@ -948,7 +948,7 @@ with-afu-menuselecting-handling () {
   [[ -z ${last_afucompleteword_p-} ]] &&
   [[ -z ${force_menuselect_off_p}  ]] &&
   [[ -z ${afu_one_match_p-}        ]] &&
-  [[ -n ${afu_match_ret-}          ]] && # TODO: does not needed?
+  { [[ -n ${afu_match_ret-} ]] && ((${afu_match_ret} == 0)) } &&
   { with-afu-compfuncs zle complete-word }
 }
 
