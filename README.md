@@ -1,4 +1,4 @@
-<img src="http://github.com/hchbaw/auto-fu.zsh/raw/readme/auto-fu.gif" />
+<img src="https://github.com/hchbaw/auto-fu.zsh/raw/readme/auto-fu.gif" />
 
 <pre>
 zsh automatic complete-word and list-choices
