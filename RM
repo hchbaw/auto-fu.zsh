@@ -6,11 +6,11 @@ declare -a T
 : ${(A)T::=${T# }}
 : ${(A)T::=${T//</&lt;}}
 : ${(A)T::=${T//>/&gt;}}
-: ${(A)T::=${T//8&lt;/>8}}
-: ${(A)T::=${T//&gt;8/8<}}
+#: ${(A)T::=${T//8&lt;/>8}}
+#: ${(A)T::=${T//&gt;8/8<}}
 
 cat <<EOT
-<img src="http://github.com/hchbaw/auto-fu.zsh/raw/readme/auto-fu.gif" />
+<img src="https://github.com/hchbaw/auto-fu.zsh/raw/readme/auto-fu.gif" />
 
 <pre>
 $(print -l $T)
