@@ -92,6 +92,7 @@ TODO: add afu-viins/afu-vicmd keymaps.
 TODO: handle empty or space characters.
 TODO: cp x /usr/loc
 TODO: region_highlight vs afu-able-p → nil
+Do *NOT* clear the region_highlight if it should.
 TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
 TODO: *-directories|all-files may not be enough.
 TODO: recommend zcompiling.
@@ -99,6 +100,7 @@ TODO: undo should reset the auto stuff's state.
 TODO: when `_match`ing,
 sometimes extra &lt;TAB&gt; key is needed to enter the menu select,
 sometimes is *not* needed. (already be entered menu select state.)
+TODO: play nice with bang_hist.
 
 History
 
