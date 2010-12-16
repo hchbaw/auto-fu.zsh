@@ -95,7 +95,7 @@ TODO: region_highlight vs afu-able-p → nil
 TODO: ^C-n could be used as the menu-select-key outside of the menuselect.
 TODO: *-directories|all-files may not be enough.
 TODO: recommend zcompiling.
-TODO: undo should be reset the auto stuff's state.
+TODO: undo should reset the auto stuff's state.
 TODO: when `_match`ing,
 sometimes extra &lt;TAB&gt; key is needed to enter the menu select,
 sometimes is *not* needed. (already be entered menu select state.)
@@ -107,7 +107,7 @@ Fix not work auto-thing without extended_glob.
 Thank you very much for the report, myuhe!
 
 v0.0.1.9
-add auto-fu-actitivate, auto-fu-deactivate and auto-fu-toggle.
+add auto-fu-activate, auto-fu-deactivate and auto-fu-toggle.
 
 v0.0.1.8.3
 in afu+complete-word PAGER=&lt;TAB&gt; ⇒ PAGER=PAGER= bug fix.
