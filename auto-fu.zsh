@@ -387,7 +387,7 @@ auto-fu-init () {
   local auto_fu_init_p=1
   local ps
   {
-    local -a region_highlight
+    local -A afu_rh_state
     local afu_in_p=0
     local afu_paused_p=0
 
@@ -411,7 +411,7 @@ with-afu-gvars () {
   }
   typeset -g afu_in_p=0
   typeset -g afu_paused_p=0
-  region_highlight=()
+  typeset -gA afu_rh_state
   "$@"
 }
 
@@ -434,8 +434,17 @@ EOT
 afu-register-zle-toggle afu_paused_p \
   auto-fu-toggle auto-fu-activate auto-fu-deactivate
 
+afu-rh-clear () {
+  afu_rh_state+=(old "${afu_rh_state[cur]-}")
+  [[ -n ${afu_rh_state[cur]-} ]] && {
+    : ${(A)region_highlight::=${(M)region_highlight:#"${afu_rh_state[cur]-}"}}
+  }
+  afu_rh_state+=(cur "")
+}
+
 afu-clearing-maybe () {
-  region_highlight=()
+  afu-rh-clear
+
   if ((afu_in_p == 1)); then
     [[ "$BUFFER" != "$buffer_new" ]] || ((CURSOR != cursor_cur)) &&
     { afu_in_p=0 }
@@ -443,7 +452,8 @@ afu-clearing-maybe () {
 }
 
 afu-reset () {
-  region_highlight=()
+  afu-rh-clear
+
   afu_in_p=0
   local ps; zstyle -s ':auto-fu:var' postdisplay ps
   [[ -z ${ps} ]] || POSTDISPLAY=''
@@ -466,6 +476,16 @@ with-afu () {
     [[ -n ${(M)es:#${zlefun#.}} ]]
   } && { auto-fu-maybe }
 }
+
+with-afu-colorize-zle-buffer () {
+  { "$@" }
+  colorize-zle-buffer
+  [[ -n "${afu_rh_state[cur]-}" ]] && {
+    region_highlight+=(${afu_rh_state[cur]-})
+  }
+}
+
+with-afu~ () { with-afu-colorize-zle-buffer with-afu "$@" }
 
 afu-register-zle-afu () {
   local afufun="$1"
@@ -647,7 +667,10 @@ auto-fu () {
       [[ -z ${hiv} ]] || {
         local -i end=$cursor_new
         [[ $BUFFER[$cursor_new] == ' ' ]] && (( end-- ))
-        region_highlight=("$CURSOR $end ${hiv}")
+        afu_rh_state+=(old "${afu_rh_state[cur]-}")
+        afu_rh_state+=(cur "$CURSOR $end ${hiv}")
+        : ${(A)region_highlight::=${(M)region_highlight:#$afu_rh_state[old]}}
+        region_highlight+=($afu_rh_state[cur])
       }
     }
 
@@ -718,7 +741,10 @@ afu+complete-word () {
     zle complete-word
   fi
 }
-zle -N afu+complete-word
+
+afu+complete-word~ () { with-afu-colorize-zle-buffer afu+complete-word }
+
+zle -N afu+complete-word afu+complete-word~
 
 [[ -z ${afu_zcompiling_p-} ]] && unset afu_zles
 
