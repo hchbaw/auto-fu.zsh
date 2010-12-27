@@ -939,7 +939,10 @@ with-afu-menuselecting-handling () {
       # _matching: (_match completer is in use; narrowing the candidates)
       # do *NOT* call complete-word after redrawing the current buffer with
       # the old contents (ex: *ab*)
-      [[ -n ${afu_match_ret-} ]] && { force_menuselect_off_p=t; return 1 }
+      [[ -n ${afu_match_ret-} ]] && {
+        force_menuselect_off_p=t
+        { afu-hmbk-seleted-key-p } && return 0 || return 1
+      }
 
       { afu-hmbk-seleted-key-p } || {
         [[ $LBUFFER[-1] == $KEYS[-1] ]] &&
