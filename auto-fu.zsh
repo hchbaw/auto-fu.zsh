@@ -926,8 +926,15 @@ with-afu-menuselecting-handling () {
 
       # _approximating: (just selected the candidate)
       # keep the current buffer and do *NOT* call complete-word.
-      [[ -n ${afu_approximate_correcting_p-} ]] &&
-      { afu-hmbk-seleted-key-p } && { force_menuselect_off_p=t; return 0 }
+      [[ -n ${afu_approximate_correcting_p-} ]] && {
+        { afu-hmbk-seleted-key-p } && { force_menuselect_off_p=t; return 0 }
+        # TODO: describe the purpose!
+        [[ $KEYS[-1] == [[:]] ]] && {
+          [[ $LBUFFER[-1] == ' '       ]] && { LBUFFER=$LBUFFER[1,-2] }
+          [[ $LBUFFER[-1] == $KEYS[-1] ]] && { LBUFFER=$LBUFFER[1,-2] }
+         return 0
+        }
+      }
 
       # _matching: (_match completer is in use; narrowing the candidates)
       # do *NOT* call complete-word after redrawing the current buffer with
