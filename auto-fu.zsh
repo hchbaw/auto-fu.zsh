@@ -367,7 +367,7 @@ afu-register-zle-accept-line () {
     zle $rawzle && {
       local hi
       zstyle -s ':auto-fu:highlight' input hi
-      [[ -z ${hi} ]] || region_highlight=("0 ${#BUFFER} ${hi}")
+      [[ -z ${hi} ]] || afu-rh-finish "0 ${#BUFFER} ${hi}"
     }
     zstyle -T ':auto-fu:var' postdisplay/clearp && POSTDISPLAY=''
     return 0
@@ -434,17 +434,54 @@ EOT
 afu-register-zle-toggle afu_paused_p \
   auto-fu-toggle auto-fu-activate auto-fu-deactivate
 
-afu-rh-clear () {
+afu-rh-highlight-state () {
+  local oplace="$1" cplace="$2"; shift 2
+  : ${(P)oplace::=afu-rh-highlight-state-sync-old}
+  : ${(P)cplace::=afu-rh-highlight-state-sync-cur}
+  { "$@" }
+}
+
+afu-rh-highlight-state-update () {
   afu_rh_state+=(old "${afu_rh_state[cur]-}")
-  [[ -n ${afu_rh_state[cur]-} ]] && {
-    : ${(A)region_highlight::=${(M)region_highlight:#"${afu_rh_state[cur]-}"}}
+  afu_rh_state+=(cur "$1")
+}
+
+afu-rh-highlight-state-sync-old () {
+  local -a old; : ${(A)old::=${=afu_rh_state[old]-}}
+  [[ -n ${old} ]] && {
+    : ${(A)region_highlight::=${region_highlight:#"$old[2,-1]"}}
   }
-  afu_rh_state+=(cur "")
+}
+
+afu-rh-highlight-state-sync-cur () {
+  local -a cur; : ${(A)cur::=${=afu_rh_state[cur]-}}
+  [[ -n ${cur} ]] && { region_highlight+=("$cur[2,-1]") }
+}
+
+afu-rh-highlight-maybe () {
+  local hi="$1"
+  local beg="$2"
+  local end="$3"
+  local hiv="$4"
+  local ok ck
+  afu-rh-highlight-state ok ck \
+    afu-rh-highlight-state-update "$hi $beg $end $hiv"; "$ok"; "$ck";
+}
+
+afu-rh-clear-maybe () {
+  local ok _ck
+  afu-rh-highlight-state ok _ck \
+    afu-rh-highlight-state-update ""; "$ok"
+}
+
+afu-rh-finish () {
+  local -a cur; : ${(A)cur::=${=afu_rh_state[cur]-}}
+  [[ -n "$cur" ]] && [[ "$cur[1]" == completion ]] && { afu-rh-clear-maybe }
+  region_highlight+=("$1")
 }
 
 afu-clearing-maybe () {
-  afu-rh-clear
-
+  afu-rh-clear-maybe
   if ((afu_in_p == 1)); then
     [[ "$BUFFER" != "$buffer_new" ]] || ((CURSOR != cursor_cur)) &&
     { afu_in_p=0 }
@@ -452,8 +489,7 @@ afu-clearing-maybe () {
 }
 
 afu-reset () {
-  afu-rh-clear
-
+  region_highlight=()
   afu_in_p=0
   local ps; zstyle -s ':auto-fu:var' postdisplay ps
   [[ -z ${ps} ]] || POSTDISPLAY=''
@@ -480,9 +516,8 @@ with-afu () {
 with-afu-colorize-zle-buffer () {
   { "$@" }
   colorize-zle-buffer
-  [[ -n "${afu_rh_state[cur]-}" ]] && {
-    region_highlight+=(${afu_rh_state[cur]-})
-  }
+  local _ok ck
+  afu-rh-highlight-state _ok ck; "$ck"
 }
 
 with-afu~ () { with-afu-colorize-zle-buffer with-afu "$@" }
@@ -667,10 +702,7 @@ auto-fu () {
       [[ -z ${hiv} ]] || {
         local -i end=$cursor_new
         [[ $BUFFER[$cursor_new] == ' ' ]] && (( end-- ))
-        afu_rh_state+=(old "${afu_rh_state[cur]-}")
-        afu_rh_state+=(cur "$CURSOR $end ${hiv}")
-        : ${(A)region_highlight::=${(M)region_highlight:#$afu_rh_state[old]}}
-        region_highlight+=($afu_rh_state[cur])
+        afu-rh-highlight-maybe $hi $CURSOR $end $hiv
       }
     }
 
