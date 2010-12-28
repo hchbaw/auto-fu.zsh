@@ -533,8 +533,8 @@ EOT
   ))"}/\$body/
     $(print -l \
       "# afu's all zle widgets expect own keymap+widgets stuff" \
-      ${${${(M)${(@f)"$(zle -l)"}:#(afu+*|auto-fu*)}:#(\
-        ${(j.|.)afu_zles/(#b)(*)/afu+$match})}/(#b)(*)/zle -N $match} \
+      ${${${(M)${(@f)"$(zle -l -L)"}:#zle -N (afu+*|auto-fu*)}:#(\
+        ${(j.|.)afu_zles/(#b)(*)/afu+$match})}/(#b)(*)/$match} \
       "# keymap+widget machinaries" \
       ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap} \
       ${afu_zles/(#b)(*)/zle -N afu+$match})
