@@ -238,7 +238,7 @@ afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 
 auto-fu-zle-keymap-select () {
   local new="${KEYMAP}"
-  local old="${1-}"
+  local old="${2-}"
   { [[ -z $old ]] || [[ -z $new ]] } && return
 
   [[ $old == afu-vicmd  ]] && [[ $new == (main|afu) ]] &&
