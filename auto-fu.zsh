@@ -513,19 +513,28 @@ with-afu () {
   } && { auto-fu-maybe }
 }
 
+# XXX: see also afu+complete-word~
+
+auto-fu-extend () { "$@" }; zle -N auto-fu-extend
+
+with-afu~ () { zle auto-fu-extend -- with-afu "$@" }
+
 with-afu-colorize-zle-buffer () {
   { "$@" }
-  colorize-zle-buffer
-  local _ok ck
-  afu-rh-highlight-state _ok ck; "$ck"
+  (($+functions[colorize-zle-buffer])) && {
+    colorize-zle-buffer
+    local _ok ck
+    afu-rh-highlight-state _ok ck; "$ck"
+  }
 }
 
-with-afu~ () { with-afu-colorize-zle-buffer with-afu "$@" }
+# XXX: redefined!
+zle -N auto-fu-extend with-afu-colorize-zle-buffer
 
 afu-register-zle-afu () {
   local afufun="$1"
   local rawzle=".${afufun#*+}"
-  eval "function $afufun () { with-afu $rawzle $afu_zles; }; zle -N $afufun"
+  eval "function $afufun () { with-afu~ $rawzle $afu_zles; }; zle -N $afufun"
 }
 
 afu-initialize-zle-afu () {
@@ -774,7 +783,7 @@ afu+complete-word () {
   fi
 }
 
-afu+complete-word~ () { with-afu-colorize-zle-buffer afu+complete-word }
+afu+complete-word~ () { zle auto-fu-extend -- afu+complete-word }
 
 zle -N afu+complete-word afu+complete-word~
 
