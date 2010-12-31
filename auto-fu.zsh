@@ -139,7 +139,21 @@
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
 
-# TODO: play nice with zsh-syntax-highlighting.
+# XXX: zsh-syntax-highlighting
+# I'm a very fond of this fancy zsh script `zsh-syntax-highlighting'.
+# https://github.com/nicoulaj/zsh-syntax-highlighting
+# If you want to integrate auto-fu.zsh with the zsh-syntax-highlighting,
+# 1) Don't "Bind ZLE events to highlighting function."
+# To do this, you can do the following.
+# % iex -e '
+# /^for
+# normal! dG
+# ' /c/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+# > ~/.zsh/zsh-syntax-highlighting.zsh
+# (I picked the 'iex'(https://github.com/tyru/iex) for this purpose.)
+# 2) source this genereted file instead.
+# % . ~/.zsh/zsh-syntax-highlighting.zsh
+
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: pause auto stuff until something happens. ("next magic-space" etc)
 # TODO: handle RBUFFER.
