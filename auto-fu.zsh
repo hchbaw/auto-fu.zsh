@@ -448,7 +448,7 @@ afu-rh-highlight-state-update () {
 
 afu-rh-highlight-state-sync-old () {
   local -a old; : ${(A)old::=${=afu_rh_state[old]-}}
-  [[ -n ${old} ]] && {
+  [[ -n ${old} ]] && [[ -n ${region_highlight} ]] && {
     : ${(A)region_highlight::=${region_highlight:#"$old[2,-1]"}}
   }
 }
