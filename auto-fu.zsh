@@ -519,17 +519,17 @@ auto-fu-extend () { "$@" }; zle -N auto-fu-extend
 
 with-afu~ () { zle auto-fu-extend -- with-afu "$@" }
 
-with-afu-colorize-zle-buffer () {
+with-afu-zsh-syntax-highlighting () {
   { "$@" }
-  (($+functions[colorize-zle-buffer])) && {
-    colorize-zle-buffer
+  (($+functions[_zsh_highlight-zle-buffer])) && {
+    _zsh_highlight-zle-buffer
     local _ok ck
     afu-rh-highlight-state _ok ck; "$ck"
   }
 }
 
 # XXX: redefined!
-zle -N auto-fu-extend with-afu-colorize-zle-buffer
+zle -N auto-fu-extend with-afu-zsh-syntax-highlighting
 
 afu-register-zle-afu () {
   local afufun="$1"
