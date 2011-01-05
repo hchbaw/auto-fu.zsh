@@ -253,6 +253,30 @@ autoload +X keymap+widget
   eval "function afu-keymap+widget () { $code }"
 }
 
+function () {
+  setopt localoptions extendedglob
+  local -a match mbegin mend
+  local -a ds; ds=(complete-word)
+  eval "
+    function with-afu-zle-rebinding () {
+      {
+        "$(echo ${afu_zles/(#b)(*)/zle -A ${match} ${match}-orig;})"
+        "$(echo ${ds/(#b)(*)/zle -A ${match} ${match}-orig;})"
+        function afu-zle-force-install () {
+          "$(echo ${afu_zles/(#b)(*)/zle -N ${match} ${match}-by-keymap;})"
+          "$(echo \
+              ${ds/(#b)(*complete*)/zle -C $match .${match} _main_complete;})"
+        }
+        afu-zle-force-install
+        { \"\$@\" }
+      } always {
+        "$(echo ${afu_zles/(#b)(*)/zle -A ${match}-orig ${match};})"
+        "$(echo ${ds/(#b)(*)/zle -A ${match}-orig ${match};})"
+      }
+    }
+  "
+}
+
 afu-install () {
   zstyle -t ':auto-fu:var' misc-installed-p || {
     zmodload zsh/parameter 2>/dev/null || {
@@ -397,7 +421,7 @@ afu-register-zle-accept-line afu+accept-line-and-down-history
 afu-register-zle-accept-line afu+accept-and-hold
 
 # Entry point.
-auto-fu-init () {
+afu-line-init () {
   local auto_fu_init_p=1
   local ps
   {
@@ -414,11 +438,10 @@ auto-fu-init () {
     [[ -z ${ps} ]] || POSTDISPLAY=''
   }
 }
-zle -N auto-fu-init
+
+auto-fu-init () { with-afu-zle-rebinding afu-line-init }; zle -N auto-fu-init
 
 # Entry point.
-auto-fu-on  () { with-afu-gvars zle -K afu   }; zle -N auto-fu-on
-auto-fu-off () { with-afu-gvars zle -K emacs }; zle -N auto-fu-off # emacs...?
 with-afu-gvars () {
   (( auto_fu_init_p == 1 )) && {
     zle -M "Sorry, can't turn on or off if auto-fu-init is in effect."; return
@@ -428,6 +451,12 @@ with-afu-gvars () {
   typeset -gA afu_rh_state
   "$@"
 }
+auto-fu-on  () { with-afu-gvars zle -K afu   }
+auto-fu-off () { with-afu-gvars zle -K emacs }
+auto-fu-on~ () { afu-zle-force-install; auto-fu-on  }
+auto-fu-off~() { afu-zle-force-install; auto-fu-off }
+zle -N auto-fu-on  auto-fu-on~
+zle -N auto-fu-off auto-fu-off~
 
 afu-register-zle-toggle () {
   local var="$1"
