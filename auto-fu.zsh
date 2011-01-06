@@ -256,25 +256,35 @@ autoload +X keymap+widget
 function () {
   setopt localoptions extendedglob
   local -a match mbegin mend
-  local -a ds; ds=(complete-word)
+  local -a rs; rs=($afu_zles complete-word)
   eval "
     function with-afu-zle-rebinding () {
+      local -a restores
       {
-        "$(echo ${afu_zles/(#b)(*)/zle -A ${match} ${match}-orig;})"
-        "$(echo ${ds/(#b)(*)/zle -A ${match} ${match}-orig;})"
+        eval \"\$("${rs/(#b)(*)/afu-rebind-expand restores $match;}")\"
         function afu-zle-force-install () {
-          "$(echo ${afu_zles/(#b)(*)/zle -N ${match} ${match}-by-keymap;})"
-          "$(echo \
-              ${ds/(#b)(*complete*)/zle -C $match .${match} _main_complete;})"
+          "$(echo ${afu_zles/(#b)(*)/ \
+              zle -N ${match} ${match}-by-keymap;})"
+          zle -C complete-word .complete-word _main_complete
         }
         afu-zle-force-install
         { \"\$@\" }
       } always {
-        "$(echo ${afu_zles/(#b)(*)/zle -A ${match}-orig ${match};})"
-        "$(echo ${ds/(#b)(*)/zle -A ${match}-orig ${match};})"
+        eval \$restores
       }
     }
   "
+}
+
+afu-rebind-expand () {
+  local place="$1"
+  local w="$2"
+  local x="$widgets[$w]"
+  [[ $x == user:*-by-keymap    ]] && return
+  [[ $x == (user|completion):* ]] || return
+  local f="${x#*:}"
+  [[ $x == completion:* ]] && echo " $place+=\"zle -C $w ${f/:/ };\" "
+  [[ $x != completion:* ]] && echo " $place+=\"zle -N $w $f;\" "
 }
 
 afu-install () {
@@ -865,7 +875,7 @@ EOT
       ${${${(M)${(@f)"$(zle -l -L)"}:#zle -N (afu+*|auto-fu*)}:#(\
         ${(j.|.)afu_zles/(#b)(*)/afu+$match})}/(#b)(*)/$match} \
       "# keymap+widget machinaries" \
-      ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap} \
+      "# ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap}" \
       ${afu_zles/(#b)(*)/zle -N afu+$match})
     }/\$afu_accept_lines/$afu_accept_lines}
 }
