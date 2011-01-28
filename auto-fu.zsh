@@ -522,7 +522,7 @@ afu-rh-clear-maybe () {
 
 afu-rh-finish () {
   local -a cur; : ${(A)cur::=${=afu_rh_state[cur]-}}
-  [[ -n "$cur" ]] && [[ "$cur[1]" == completion ]] && { afu-rh-clear-maybe }
+  [[ -n "$cur" ]] && [[ "$cur[1]" == completion/* ]] && { afu-rh-clear-maybe }
   region_highlight+=("$1")
 }
 
