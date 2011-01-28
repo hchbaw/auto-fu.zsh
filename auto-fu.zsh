@@ -241,10 +241,10 @@ auto-fu-zle-keymap-select () {
   local old="${2-}"
   { [[ -z $old ]] || [[ -z $new ]] } && return
 
-  [[ $old == afu-vicmd  ]] && [[ $new == (main|afu) ]] &&
+  [[ $old == *vicmd  ]] && [[ $new == (main|afu) ]] &&
   { zle afu+vi-ins-mode; return }
 
-  [[ $old == afu && $new == afu-vicmd ]] && { region_highlight=(); return }
+  [[ $old == afu && $new == *vicmd ]] && { region_highlight=(); return }
 }
 
 afu-install afu-keymap+widget
