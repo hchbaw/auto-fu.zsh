@@ -529,7 +529,7 @@ afu-rh-finish () {
 afu-clearing-maybe () {
   local clearregionp="$1"
   [[ $clearregionp == t ]] && region_highlight=()
-  [[ $clearregionp != t ]] && afu-rh-clear-maybe
+  afu-rh-clear-maybe
   if ((afu_in_p == 1)); then
     [[ "$BUFFER" != "$buffer_new" ]] || ((CURSOR != cursor_cur)) &&
     { afu_in_p=0 }
