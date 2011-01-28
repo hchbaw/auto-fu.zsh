@@ -408,7 +408,10 @@ afu-register-zle-accept-line () {
     zle $rawzle && {
       local hi
       zstyle -s ':auto-fu:highlight' input hi
-      [[ -z ${hi} ]] || afu-rh-finish "0 ${#BUFFER} ${hi}"
+      [[ -z ${hi} ]] || {
+        # XXX: subject to change.
+        (($+functions[${hi}])) && "${hi}" || afu-rh-finish "0 ${#BUFFER} ${hi}"
+      }
     }
     zstyle -T ':auto-fu:var' postdisplay/clearp && POSTDISPLAY=''
     return 0
