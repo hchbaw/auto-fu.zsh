@@ -242,17 +242,6 @@ afu-register-zle-eof      afu+orf-exit-deletechar-list exit
 afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
 afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 
-auto-fu-zle-keymap-select () {
-  local new="${KEYMAP}"
-  local old="${2-}"
-  { [[ -z $old ]] || [[ -z $new ]] } && return
-
-  [[ $old == *vicmd  ]] && [[ $new == (main|afu) ]] &&
-  { zle afu+vi-ins-mode; return }
-
-  [[ $old == afu && $new == *vicmd ]] && { region_highlight=(); return }
-}
-
 auto-fu-zle-keymap-select () { afu-track-keymap "$@" afu-adjust-main-keymap }
 
 afu-adjust-main-keymap () { [[ "$KEYMAP" == 'main' ]] && { zle -K "$1" } }
