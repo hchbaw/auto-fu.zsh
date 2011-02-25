@@ -422,13 +422,28 @@ afu-initialize-zle-afu
 afu-able-p () {
   (( afu_paused_p == 1 )) && return 1;
 
+  # XXX: This could be done sanely in the _main_complete or $_comps[x].
+  # autoablep-function
+  #   A predicate function to determine whether auto-stuff could be
+  #   appropriate. (Default `auto-fu-default-autoable-pred')
+  local pred=; zstyle -s ':auto-fu:var' autoablep-function pred
+  "${pred:-auto-fu-default-autoable-pred}"; return $?
+}
+
+auto-fu-default-autoable-pred () {
   local c=$LBUFFER[-1]
   [[ $c == ''  ]] && return 1;
   [[ $c == ' ' ]] && { afu-able-space-p || return 1 && return 0 }
-  [[ $c == '.' ]] && return 1;
-  [[ $c == '^' ]] && return 1;
-  [[ $c == '~' ]] && return 1;
-  [[ $c == ')' ]] && return 1;
+
+  local -a reply; local REPLY REPLY2
+  autoload -U split-shell-arguments; split-shell-arguments
+  ((REPLY & 1)) && ((REPLY--))
+
+  local word="${reply[REPLY]}"
+  if [[ "$options[banghist]" == "on" ]]; then
+    [[ "$word" == "$histchars[0,1]"* ]] && return 1
+  fi
+  [[ "${word##*/}" == ("."|"..") ]] && return 1
   return 0
 }
 
