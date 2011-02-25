@@ -907,7 +907,7 @@ with-afu-completer-vars () {
 
 with-afu-menuselecting-handling () {
   local fn="$1"
-  local inserts="*(approximate|match)"
+  local inserts="*(approximate|match|ignored)"
 
   # being propagated from `afu+complete-word` then
   # `_match|_approximate|etc. ⇒ select something` or not.
@@ -940,7 +940,8 @@ with-afu-menuselecting-handling () {
       # do *NOT* call complete-word after redrawing the current buffer with
       # the old contents (ex: *ab*)
       [[ -n ${afu_match_ret-} ]] && {
-        force_menuselect_off_p=t
+        # accept-line-ish does not involve any auto-stuff, so turn on.
+        [[ $KEYS[-1] == $'\015' ]] && force_menuselect_off_p=
         { afu-hmbk-seleted-key-p } && return 0 || return 1
       }
 
@@ -1101,6 +1102,7 @@ afu-install-tracking-completer () {
   local funname="$1"
   local varname="$2"
   local nozerop="${3:-}"
+  local retfunc="${4:-}"
   local completer=${funname#_afu}
   eval "$(cat <<EOT
     $funname () {
@@ -1116,13 +1118,24 @@ afu-install-tracking-completer () {
         (( ret == 0 )) && $varname=t
       fi
 
+      [[ -n "$retfunc" ]] && $retfunc \$ret
+
       return ret
     }
 EOT
   )"
 }
 afu-install-tracking-completer _afu_approximate afu_approximate_correcting_p
-afu-install-tracking-completer _afu_match afu_match_ret t
+afu-install-tracking-completer _afu_match afu_match_ret t afu-match-init-maybe
+
+afu-match-init-maybe () {
+  local -i ret="$1"
+  # Special treatment during the _match completer invocation.
+  ((!$ret)) && {
+    _message "$BUFFER"
+  }
+  return ret
+}
 
 autoload +X keymap+widget
 
