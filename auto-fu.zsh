@@ -63,6 +63,11 @@
 #       zstyle ':auto-fu:var' disable magic-space
 #     yields; complete-word will not be triggered after pressing the
 #     space-bar, otherwise automatic thing will be taken into account.
+#   track-keymap-skip
+#     A list of keymap names to *NOT* be treated as a keymap change.
+#     In other words, these keymaps cannot be used with the standalone main
+#     keymap. For example "opp". If you use my opp.zsh, please add an 'opp'
+#     to this zstyle.
 
 # Configuration example
 
@@ -70,6 +75,7 @@
 # zstyle ':auto-fu:highlight' completion fg=black,bold
 # zstyle ':auto-fu:highlight' completion/one fg=white,bold,underline
 # zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+# zstyle ':auto-fu:var' track-keymap-skip opp
 # #zstyle ':auto-fu:var' disable magic-space
 
 # XXX: use with the error correction or _match completer.
@@ -245,6 +251,39 @@ auto-fu-zle-keymap-select () {
   { zle afu+vi-ins-mode; return }
 
   [[ $old == afu && $new == *vicmd ]] && { region_highlight=(); return }
+}
+
+auto-fu-zle-keymap-select () { afu-track-keymap "$@" afu-adjust-main-keymap }
+
+afu-adjust-main-keymap () { [[ "$KEYMAP" == 'main' ]] && { zle -K "$1" } }
+
+afu-track-keymap () {
+  typeset -gA afu_keymap_state # XXX: global state variable.
+  local new="${KEYMAP}"
+  local old="${2}"
+  local fun="${3}"
+  { afu-track-keymap-skip-p "$old" "$new" } && return
+  local cur="${afu_keymap_state[cur]-}"
+  afu_keymap_state+=(old "${afu_keymap_state[cur]-}")
+  afu_keymap_state+=(cur "$old $new")
+  [[ "$new" == 'main' ]] && [[ -n "$cur" ]] && {
+    local -a tmp; tmp=("${(Q)=cur}")
+    afu_keymap_state+=(cur "$old $tmp[1]")
+    "$fun" "$tmp[1]"
+  }
+}
+
+afu-track-keymap-skip-p () {
+  local old="$1"
+  local new="$2"
+  { [[ -z "$old" ]] || [[ -z "$new" ]] } && return 0
+  local -a ms; ms=(); zstyle -a ':auto-fu:var' track-keymap-skip ms
+  (( ${#ms} )) || return -1
+  local m; for m in $ms; do
+    [[ "$old" == "$m" ]] && return 0
+    [[ "$new" == "$m" ]] && return 0
+  done
+  return -1
 }
 
 afu-install afu-keymap+widget
@@ -592,6 +631,7 @@ zstyle ':auto-fu:highlight' input bold
 zstyle ':auto-fu:highlight' completion fg=black,bold
 zstyle ':auto-fu:highlight' completion/one fg=white,bold,underline
 zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+zstyle ':auto-fu:var' track-keymap-skip opp
 zle-line-init () {auto-fu-init;}; zle -N zle-line-init
 zle -N zle-keymap-select auto-fu-zle-keymap-select
 -- 8< --
