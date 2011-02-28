@@ -431,19 +431,29 @@ afu-able-p () {
 }
 
 auto-fu-default-autoable-pred () {
-  local c=$LBUFFER[-1]
-  [[ $c == ''  ]] && return 1;
-  [[ $c == ' ' ]] && { afu-able-space-p || return 1 && return 0 }
+  local -a ps; zstyle -a ':auto-fu:var' autable-function/preds ps
+  (( $#ps )) || {
+    ps=(afu-autoable-space-p \
+        afu-autoable-histchar-p \
+        afu-autoable-skipword-p \
+        afu-autoable-dots-p)
+  }
 
   local -a reply; local REPLY REPLY2
   autoload -U split-shell-arguments; split-shell-arguments
   ((REPLY & 1)) && ((REPLY--))
 
   local word="${reply[REPLY]}"
-  if [[ "$options[banghist]" == "on" ]]; then
-    [[ "$word" == "$histchars[0,1]"* ]] && return 1
-  fi
-  [[ "${word##*/}" == ("."|"..") ]] && return 1
+  local p; for p in $ps; do
+    "$p" "$word" || return 1
+  done
+  return 0
+}
+
+afu-autoable-space-p () {
+  local c=$LBUFFER[-1]
+  [[ $c == ''  ]] && return 1;
+  [[ $c == ' ' ]] && { afu-able-space-p || return 1 && return 0 }
   return 0
 }
 
@@ -458,6 +468,24 @@ afu-able-space-p () {
   #[[ $x[1] != (man|perldoc|ri) ]]
   [[ $x[1] != man ]]
 }
+
+afu-autoable-histchar-p () {
+  local word="$1"
+  if [[ "$options[banghist]" == "on" ]]; then
+    [[ "$word" == "$histchars[0,1]"* ]] && return 1
+  fi
+  return 0
+}
+
+afu-autoable-skipword-p () {
+  local word="$1"
+  local skip; zstyle -s ':auto-fu:var' autoable-function/skipword skip
+  [[ -n $skip ]] || { local -a a; a=("'" "$'"); skip="(${(j.|.)a})*" }
+  [[ "${word}" == ${~skip} ]] && return 1
+  return 0
+}
+
+afu-autoable-dots-p () { [[ "${1##*/}" != ("."|"..")  ]] }
 
 auto-fu-maybe () {
   (($PENDING== 0)) && { afu-able-p } && [[ $LBUFFER != *$'\012'*  ]] &&
