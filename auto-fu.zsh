@@ -432,12 +432,7 @@ afu-able-p () {
 
 auto-fu-default-autoable-pred () {
   local -a ps; zstyle -a ':auto-fu:var' autable-function/preds ps
-  (( $#ps )) || {
-    ps=(afu-autoable-space-p \
-        afu-autoable-histchar-p \
-        afu-autoable-skipword-p \
-        afu-autoable-dots-p)
-  }
+  (( $#ps )) || { afu-autoable-default-functions ps }
 
   local -a reply; local REPLY REPLY2
   autoload -U split-shell-arguments; split-shell-arguments
@@ -448,6 +443,16 @@ auto-fu-default-autoable-pred () {
     "$p" "$word" || return 1
   done
   return 0
+}
+
+afu-autoable-default-functions () {
+  local place="$1"
+  local -a defaults; defaults=(\
+    afu-autoable-space-p \
+    afu-autoable-histchar-p \
+    afu-autoable-skipword-p \
+    afu-autoable-dots-p)
+  : ${(PA)place::=$defaults}
 }
 
 afu-autoable-space-p () {
