@@ -394,7 +394,7 @@ with-afu () {
   ((afu_in_p == 1)) && { afu_in_p=0; BUFFER="$buffer_cur" }
   zle $zlefun && {
     emulate -L zsh
-    setopt extended_glob
+    setopt extended_glob nobanghist
     local es ds
     zstyle -a ':auto-fu:var' enable es; (( ${#es} == 0 )) && es=(all)
     if [[ -n ${(M)es:#(#i)all} ]]; then
@@ -449,7 +449,6 @@ afu-autoable-default-functions () {
   local place="$1"
   local -a defaults; defaults=(\
     afu-autoable-space-p \
-    afu-autoable-histchar-p \
     afu-autoable-skipword-p \
     afu-autoable-dots-p)
   : ${(PA)place::=$defaults}
@@ -472,14 +471,6 @@ afu-able-space-p () {
   : ${(A)x::=${(z)LBUFFER}}
   #[[ $x[1] != (man|perldoc|ri) ]]
   [[ $x[1] != man ]]
-}
-
-afu-autoable-histchar-p () {
-  local word="$1"
-  if [[ "$options[banghist]" == "on" ]]; then
-    [[ "$word" == "$histchars[0,1]"* ]] && return 1
-  fi
-  return 0
 }
 
 afu-autoable-skipword-p () {
