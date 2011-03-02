@@ -431,16 +431,19 @@ afu-able-p () {
 }
 
 auto-fu-default-autoable-pred () {
-  local -a ps; zstyle -a ':auto-fu:var' autable-function/preds ps
+  local -a ps; zstyle -a ':auto-fu:var' autoable-function/preds ps
   (( $#ps )) || { afu-autoable-default-functions ps }
 
-  local -a reply; local REPLY REPLY2
-  autoload -U split-shell-arguments; split-shell-arguments
-  ((REPLY & 1)) && ((REPLY--))
+  local -a reply; local -i REPLY REPLY2
+  local -a areply; local -i AREPLY
+  afu-split-shell-arguments
 
   local word="${reply[REPLY]}"
+  local commandish="${areply[AREPLY]}"
   local p; for p in $ps; do
-    "$p" "$word" || return 1
+    local ret=0; "$p" "$word" "$commandish"; ret=$?
+    ((ret == 1)) && return 1
+    ((ret ==-1)) && return 0 # XXX: Badness.
   done
   return 0
 }
@@ -454,10 +457,24 @@ afu-autoable-default-functions () {
   : ${(PA)place::=$defaults}
 }
 
+afu-split-shell-arguments () {
+  autoload -U split-shell-arguments; split-shell-arguments
+  ((REPLY & 1)) && ((REPLY--))
+  ((REPLY2 = ${#reply[REPLY]} + 1))
+
+  # XXX: I can't hold the reply's first element with the parameter expansion.
+  # - areply: kind of LBEFFER, but areply is an array.
+  # - AREPLY: areply's right most command index.
+  : ${(A)areply::=${reply[1,REPLY]}}
+  AREPLY=${areply[(I)(\||\|\||;|&|&&)]}; ((AREPLY++))
+  [[ $areply[AREPLY] == (noglob|nocorrect|builtin|command) ]] && \
+    ((AREPLY+=2))
+}
+
 afu-autoable-space-p () {
   local c=$LBUFFER[-1]
   [[ $c == ''  ]] && return 1;
-  [[ $c == ' ' ]] && { afu-able-space-p || return 1 && return 0 }
+  [[ $c == ' ' ]] && { afu-able-space-p || return 1 && return -1 }
   return 0
 }
 
