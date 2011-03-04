@@ -441,19 +441,37 @@ auto-fu-default-autoable-pred () {
   local word="${reply[REPLY]}"
   local commandish="${areply[AREPLY]}"
   local p; for p in $ps; do
-    local ret=0; "$p" "$word" "$commandish"; ret=$?
+    local ret=0; "$p" \
+      "$word" "$commandish" \
+        "${(j..)areply[AREPLY,((REPLY-1))]}" \
+        "${(j..)areply[AREPLY,-1]}"
+    ret=$?
     ((ret == 1)) && return 1
     ((ret ==-1)) && return 0 # XXX: Badness.
   done
   return 0
 }
 
+afu-error-symif () {
+  local fname="$1"; shift
+  local place="$1"; shift
+  [[ "$place" == (${~${(j.|.)@}}) ]] && {
+    echo \
+      "*** error in $fname; ${(qq)@} cannot be used in this context. sorry."
+    return -1
+  }
+  return 0
+}
+
 afu-autoable-default-functions () {
   local place="$1"
+  afu-error-symif "$0" "$place" defaults || return $?
   local -a defaults; defaults=(\
     afu-autoable-space-p \
     afu-autoable-skipword-p \
-    afu-autoable-dots-p)
+    afu-autoable-dots-p \
+    afu-autoable-skiplbuffer-p \
+    afu-autoable-skipline-p)
   : ${(PA)place::=$defaults}
 }
 
@@ -490,15 +508,47 @@ afu-able-space-p () {
   [[ $x[1] != man ]]
 }
 
-afu-autoable-skipword-p () {
-  local word="$1"
-  local skip; zstyle -s ':auto-fu:var' autoable-function/skipword skip
-  [[ -n $skip ]] || { local -a a; a=("'" "$'"); skip="(${(j.|.)a})*" }
-  [[ "${word}" == ${~skip} ]] && return 1
+afu-autoable-dots-p () { [[ "${1##*/}" != ("."|"..")  ]] }
+
+afu-autoable-skip-pred () {
+  local place="$1"
+  local style="$2"
+  local deffn="$3"
+  local value="${(P)place}"
+  local -a skips; skips=(); zstyle -a ':auto-fu:var' "$style" skips
+  (($#skips==0)) && [[ -n "$deffn" ]] && { "$deffn" skips }
+  local skip; for skip in $skips; do
+    [[ "${value}" == ${~skip} ]] && {
+      [[ -n "${AUTO_FU_DEBUG-}" ]] && {
+        echo "***BREAK*** ${skip}" >> ${AUTO_FU_DEBUG-}
+      }
+      return 1
+    }
+  done
   return 0
 }
 
-afu-autoable-dots-p () { [[ "${1##*/}" != ("."|"..")  ]] }
+afu-autoable-skipword-p () {
+  local word="$1"
+  afu-autoable-skip-pred word autoable-function/skipwords \
+    afu-autoable-skipword-p-default
+}
+
+afu-autoable-skipword-p-default () {
+  afu-error-symif "$0" "$1" aa tmpp || return $?
+  local -a aa; aa=("'" "$'"); local -a tmpp; tmpp=("(${(j.|.)aa})*")
+  : ${(PA)1::=$tmpp}
+}
+
+afu-autoable-skiplbuffer-p () {
+  local lbuffer="$3"
+  afu-autoable-skip-pred lbuffer autoable-function/skiplbuffers
+}
+
+afu-autoable-skipline-p () {
+  local line="$4"
+  afu-autoable-skip-pred line autoable-function/skiplines
+}
 
 auto-fu-maybe () {
   (($PENDING== 0)) && { afu-able-p } && [[ $LBUFFER != *$'\012'*  ]] &&
