@@ -470,8 +470,6 @@ afu-initialize-zle-afu () {
 afu-initialize-zle-afu
 
 afu-able-p () {
-  (( afu_paused_p == 1 )) && return 1;
-
   # XXX: This could be done sanely in the _main_complete or $_comps[x].
   local pred=; zstyle -s ':auto-fu:var' autoablep-function pred
   "${pred:-auto-fu-default-autoable-pred}"; return $?
@@ -513,6 +511,7 @@ afu-autoable-default-functions () {
   local place="$1"
   afu-error-symif "$0" "$place" defaults || return $?
   local -a defaults; defaults=(\
+    afu-autoable-paused-p \
     afu-autoable-space-p \
     afu-autoable-skipword-p \
     afu-autoable-dots-p \
@@ -520,6 +519,8 @@ afu-autoable-default-functions () {
     afu-autoable-skipline-p)
   : ${(PA)place::=$defaults}
 }
+
+afu-autoable-paused-p () { (( afu_paused_p == 0 )) }
 
 afu-split-shell-arguments () {
   autoload -U split-shell-arguments; split-shell-arguments
