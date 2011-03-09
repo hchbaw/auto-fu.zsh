@@ -586,9 +586,9 @@ afu-autoable-skipword-p () {
 }
 
 afu-autoable-skipword-p-default () {
-  afu-error-symif "$0" "$1" aa tmpp || return $?
-  local -a aa; aa=("'" "$'"); local -a tmpp; tmpp=("(${(j.|.)aa})*")
-  : ${(PA)1::=$tmpp}
+  afu-error-symif "$0" "$1" a tmp || return $?
+  local -a a; a=("'" "$'" "$histchars[1]");local -a tmp; tmp=("(${(j.|.)a})*")
+  : ${(PA)1::=$tmp}
 }
 
 afu-autoable-skiplbuffer-p () {
