@@ -612,14 +612,17 @@ with-afu-compfuncs () {
   "$@"
 }
 
-auto-fu () {
+with-afu-completer-vars () {
   emulate -L zsh
   unsetopt rec_exact
   local LISTMAX=999999
+  with-afu-compfuncs "$@"
+}
 
+auto-fu () {
   cursor_cur="$CURSOR"
   buffer_cur="$BUFFER"
-  with-afu-compfuncs zle complete-word
+  with-afu-completer-vars zle complete-word
   cursor_new="$CURSOR"
   buffer_new="$BUFFER"
 
@@ -641,7 +644,7 @@ auto-fu () {
     then afu_in_p=1; {
       local BUFFER="$buffer_cur"
       local CURSOR="$cursor_cur"
-      with-afu-compfuncs zle list-choices
+      with-afu-completer-vars zle list-choices
     }
     fi
   else
@@ -668,7 +671,7 @@ afu+complete-word () {
   afu-clearing-maybe
   { afu-able-p } || { zle complete-word; return; }
 
-  with-afu-compfuncs;
+  with-afu-completer-vars;
   if ((afu_in_p == 1)); then
     afu_in_p=0; CURSOR="$cursor_new"
     case $LBUFFER[-1] in
