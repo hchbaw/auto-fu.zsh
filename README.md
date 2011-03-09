@@ -20,6 +20,9 @@ To use this,
 3) use the _oldlist completer something like below.
 % zstyle ':completion:*' completer _oldlist _complete
 (If you have a lot of completer, please insert _oldlist before _complete.)
+4) establish `zle-keymap-select' containing `auto-fu-zle-keymap-select'.
+% zle -N zle-keymap-select auto-fu-zle-keymap-select
+(This enables the afu-vicmd keymap switching coordinates a bit.)
 *Optionally* you can use the zcompiled file for a little faster loading on
 every shell startup, if you zcompile the necessary functions.
 *1) zcompile the defined functions. (generates ~/.zsh/auto-fu.zwc)
@@ -62,7 +65,55 @@ The auto-fu features can be configured via zstyle.
       zstyle ':auto-fu:var' disable magic-space
     yields; complete-word will not be triggered after pressing the
     space-bar, otherwise automatic thing will be taken into account.
-
+  track-keymap-skip
+    A list of keymap names to *NOT* be treated as a keymap change.
+    In other words, these keymaps cannot be used with the standalone main
+    keymap. For example "opp". If you use my opp.zsh, please add an 'opp'
+    to this zstyle.
+  autoable-function/skipwords
+  autoable-function/skiplbuffers
+  autoable-function/skiplines
+    A list of patterns to *NOT* be treated as auto-stuff appropriate.
+    These patterns will be tested against the part of the command line
+    buffer as shown on the below figure:
+    (*) is used to denote the cursor position.
+      # nocorrect aptitude --assume-*yes -d install zsh && echo ready
+                           &lt;--------&gt;skipwords
+                  &lt;-----------------&gt;skiplbuffers
+                  &lt;-----------------------------------&gt;skplines
+    Examples:
+    - To disable auto-stuff inside single and also double quotes.
+      And less than 3 chars before the cursor.
+      zstyle ':auto-fu:var' autoable-function/skipwords \
+        "('|$'|")*" "^((???)##)"
+    - To disable the rm's first option, and also after the '(cvs|svn) co'.
+      zstyle ':auto-fu:var' autoable-function/skiplbuffers \
+        'rm -[![:blank:]]#' '(cvs|svn) co *'
+    - To disable after the 'aptitude word '.
+      zstyle ':auto-fu:var' autoable-function/skiplines \
+        '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)aptitude [[:print:]]# *'
+  autoable-function/preds
+    A list of functions to be called whether auto-stuff appropriate or not.
+    These functions will be called with the arguments (above figure)
+      - $1 '--assume-'
+      - $2 'aptitude'
+      - $3 'aptitude --assume-'
+      - $4 'aptitude --assume-yes -d install zsh'
+    For example,
+    to disable some 'perl -M' thing, we can do by the following zsh codes.
+&gt;
+      afu-autoable-pm-p () { [[ ! ("$2" == 'perl' && "$1" == -(#i)m*) ]] }
+      # retrieve default value into 'preds' to push the above function into.
+      local -a preds; afu-autoable-default-functions preds
+      preds+=afu-autoable-pm-p
+      zstyle ':auto-fu:var' autoable-function/preds $preds
+&lt;
+    The afu-autoable-dots-p is actually an example of this ability to skip
+    uninteresting dots.
+  autoablep-function
+    A predicate function to determine whether auto-stuff could be
+    appropriate. (Default `auto-fu-default-autoable-pred' implements the
+    above autoablep-function/* functionality.)
 Configuration example
 
 zstyle ':auto-fu:highlight' input bold
@@ -70,6 +121,7 @@ zstyle ':auto-fu:highlight' completion fg=black,bold
 zstyle ':auto-fu:highlight' completion/one fg=white,bold,underline
 zstyle ':auto-fu:var' postdisplay $'
 -azfu-'
+zstyle ':auto-fu:var' track-keymap-skip opp
 #zstyle ':auto-fu:var' disable magic-space
 
 XXX: use with the error correction or _match completer.
@@ -83,12 +135,11 @@ I'm very sorry for this annonying behaviour.
 XXX: ignoreeof semantics changes for overriding ^D.
 You cannot change the ignoreeof option interactively. I'm verry sorry.
 
-TODO: refine afu-able-space-p or better.
+TODO: play nice with zsh-syntax-highlighting.
 TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 TODO: pause auto stuff until something happens. ("next magic-space" etc)
 TODO: handle RBUFFER.
 TODO: signal handling during the recursive edit.
-TODO: add afu-viins/afu-vicmd keymaps.
 TODO: handle empty or space characters.
 TODO: cp x /usr/loc
 TODO: region_highlight vs afu-able-p → nil
@@ -100,9 +151,14 @@ TODO: undo should reset the auto stuff's state.
 TODO: when `_match`ing,
 sometimes extra &lt;TAB&gt; key is needed to enter the menu select,
 sometimes is *not* needed. (already be entered menu select state.)
-TODO: play nice with bang_hist.
 
 History
+
+v0.0.1.11
+play nice with banghist.
+Thank you very much for the report, yoshikaw!
+add autoablep-function machinery.
+Thank you very much for the suggestion, tyru and kei_q!
 
 v0.0.1.10
 Fix not work auto-thing without extended_glob.

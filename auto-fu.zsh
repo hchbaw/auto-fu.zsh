@@ -104,7 +104,7 @@
 #     For example,
 #     to disable some 'perl -M' thing, we can do by the following zsh codes.
 #>
-#       afu-autoable-pm-p () { [[ ! ("$2" == 'perl' && "$1" == '-M'*) ]] }
+#       afu-autoable-pm-p () { [[ ! ("$2" == 'perl' && "$1" == -(#i)m*) ]] }
 #
 #       # retrieve default value into 'preds' to push the above function into.
 #       local -a preds; afu-autoable-default-functions preds
@@ -139,7 +139,7 @@
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
 
-# TODO: refine afu-able-space-p or better.
+# TODO: play nice with zsh-syntax-highlighting.
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: pause auto stuff until something happens. ("next magic-space" etc)
 # TODO: handle RBUFFER.
@@ -155,9 +155,14 @@
 # TODO: when `_match`ing,
 # sometimes extra <TAB> key is needed to enter the menu select,
 # sometimes is *not* needed. (already be entered menu select state.)
-# TODO: play nice with bang_hist.
 
 # History
+
+# v0.0.1.11
+# play nice with banghist.
+# Thank you very much for the report, yoshikaw!
+# add autoablep-function machinery.
+# Thank you very much for the suggestion, tyru and kei_q!
 
 # v0.0.1.10
 # Fix not work auto-thing without extended_glob.
