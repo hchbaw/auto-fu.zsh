@@ -546,6 +546,25 @@ afu-reset () {
   [[ -z ${ps} ]] || POSTDISPLAY=''
 }
 
+with-afu-region-highlight-saving () {
+  local -a rh; : ${(A)rh::=$region_highlight}
+  region_highlight=()
+  {
+    local h; for h in $rh; do
+      local -a tmp; : ${(A)tmp::=${=h}}
+      (($tmp[1] <= $CURSOR + 1)) && {
+        (($tmp[2] <= $CURSOR + 1)) || ((tmp[2] = $CURSOR - 1))
+        # XXX: disappears the highlights on the buffer at the part of the
+        # menu selection though.
+        region_highlight+="$tmp[1] $tmp[2] $tmp[3]"
+      }
+    done
+    "$@"
+  } always {
+    : ${(A)region_highlight::=$rh}
+  }
+}
+
 with-afu () {
   local clearp="$1"; shift
   local zlefun="$1"; shift
@@ -553,7 +572,7 @@ with-afu () {
   : ${(A)zs::=$@}
   afu-clearing-maybe "$clearp"
   ((afu_in_p == 1)) && { afu_in_p=0; BUFFER="$buffer_cur" }
-  zle $zlefun && {
+  with-afu-region-highlight-saving zle $zlefun && {
     setopt localoptions extendedglob no_banghist
     local es ds
     zstyle -a ':auto-fu:var' enable es; (( ${#es} == 0 )) && es=(all)
@@ -748,7 +767,7 @@ with-afu-compfuncs () {
 with-afu-completer-vars () {
   setopt localoptions no_recexact
   local LISTMAX=999999
-  with-afu-compfuncs "$@"
+  with-afu-compfuncs with-afu-region-highlight-saving "$@"
 }
 
 auto-fu () {
@@ -840,9 +859,11 @@ afu+complete-word () {
   fi
 }
 
-afu+complete-word~ () { zle auto-fu-extend -- afu+complete-word }
+afu+complete-word~ () {with-afu-region-highlight-saving afu+complete-word "$@"}
 
-zle -N afu+complete-word afu+complete-word~
+afu+complete-word~~ () { zle auto-fu-extend -- afu+complete-word~ }
+
+zle -N afu+complete-word afu+complete-word~~
 
 [[ -z ${afu_zcompiling_p-} ]] && unset afu_zles
 
