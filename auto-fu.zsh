@@ -626,10 +626,17 @@ with-afu-zsh-syntax-highlighting () {
 # XXX: redefined!
 zle -N auto-fu-extend with-afu-zsh-syntax-highlighting
 
+afu-register-zle-afu-raw () {
+  local afufun="$1"
+  local rawzle="$2"
+  shift 2
+  eval "function $afufun () { with-afu~ $rawzle $@; }; zle -N $afufun"
+}
+
 afu-register-zle-afu () {
   local afufun="$1"
   local rawzle=".${afufun#*+}"
-  eval "function $afufun () { with-afu~ $rawzle $afu_zles; }; zle -N $afufun"
+  afu-register-zle-afu-raw $afufun $rawzle $afu_zles
 }
 
 afu-initialize-zle-afu () {
