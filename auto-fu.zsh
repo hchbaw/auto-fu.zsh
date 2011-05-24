@@ -145,6 +145,12 @@
 # If you want to integrate auto-fu.zsh with the zsh-syntax-highlighting,
 # please source the zsh-syntax-highlighting.zsh before this file.
 
+# XXX: use with the url-quote-magic.
+# Please set up the url-quote-magic before sourcing the auto-fu.zsh.
+# If you zcompile the auto-fu.zsh with auto-fu-zcompile, it is likely not
+# known the presence of the url-quote-magic at the zcompile time. If it
+# isn't, please set the variable AUTO_FU_ZCOMPILE_URLQUOTEMAGIC=t.
+
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: pause auto stuff until something happens. ("next magic-space" etc)
 # TODO: handle RBUFFER.
