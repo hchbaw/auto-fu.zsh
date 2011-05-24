@@ -645,9 +645,37 @@ afu-initialize-zle-afu () {
     afu-register-zle-afu afu+$z
   done
 }
-afu-initialize-zle-afu
 
-afu-install afu-keymap+widget
+afu-initialize-url-quote-magic-p () {
+  [[ -n ${afu_zcompiling_p-} ]] && [[ -n ${AUTO_FU_ZCOMPILE_URLQUOTEMAGIC-} ]] \
+  || {
+    zmodload zsh/zleparameter &&
+    [[ $widgets[self-insert] == user:url-quote-magic ]]
+  }
+}
+
+afu-initialize-url-quote-magic-maybe () {
+  afu-initialize-url-quote-magic-p &&
+  afu-initialize-url-quote-magic
+}
+
+afu-initialize-url-quote-magic () {
+  zle -N self-insert self-insert-by-keymap # XXX: Iffy. see keymap+widgets
+  zle -N afu+url-quote-magic url-quote-magic
+  afu-register-zle-afu-raw \
+    afu+self-insert afu+url-quote-magic afu+url-quote-magic $afu_zles
+}
+
+afu-install-forall () {
+  local a; for a in "$@"; do
+    "$a"
+  done
+}
+
+afu-install afu-install-forall \
+  afu-initialize-zle-afu \
+  afu-initialize-url-quote-magic-maybe \
+  afu-keymap+widget
 function () {
   [[ -z ${AUTO_FU_NOCP-} ]] || return
   # For backward compatibility
