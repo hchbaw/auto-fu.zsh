@@ -379,16 +379,6 @@ afu-track-keymap-skip-p () {
   return -1
 }
 
-afu-install afu-keymap+widget
-function () {
-  [[ -z ${AUTO_FU_NOCP-} ]] || return
-  # For backward compatibility
-  zstyle ':auto-fu:highlight' input bold
-  zstyle ':auto-fu:highlight' completion fg=black,bold
-  zstyle ':auto-fu:highlight' completion/one fg=whilte,bold,underline
-  zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
-}
-
 declare -a afu_accept_lines
 
 afu-recursive-edit-and-accept () {
@@ -649,6 +639,16 @@ afu-initialize-zle-afu () {
   done
 }
 afu-initialize-zle-afu
+
+afu-install afu-keymap+widget
+function () {
+  [[ -z ${AUTO_FU_NOCP-} ]] || return
+  # For backward compatibility
+  zstyle ':auto-fu:highlight' input bold
+  zstyle ':auto-fu:highlight' completion fg=black,bold
+  zstyle ':auto-fu:highlight' completion/one fg=whilte,bold,underline
+  zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+}
 
 afu-able-p () {
   # XXX: This could be done sanely in the _main_complete or $_comps[x].
