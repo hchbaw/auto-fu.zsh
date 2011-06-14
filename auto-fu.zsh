@@ -971,7 +971,14 @@ with-afu-menuselecting-handling () {
 }
 
 afu-hmbk-selected-key-p () {
-  [[ $KEYS[-1] == ' ' ]]     && return 0
+  [[ $KEYS[-1] == ' ' ]] && {
+    local c="$LBUFFER[-1]"
+    # XXX: most likely this extra white space has been appended by magic-space.
+    [[ "$c" == ' ' ]] && [[ -z ${afu_one_match_p-} ]] && {
+      LBUFFER="$LBUFFER[1,-2]"
+    }
+    return 0
+  }
   [[ $KEYS[-1] == $'\015' ]] && return 0
   [[ $KEYS[-1] == $'\012' ]] && return 0
   [[ $KEYS[-1] == $'/' ]]    && return 0 # for example 'scp host:/'
