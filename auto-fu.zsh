@@ -504,7 +504,12 @@ afu-rh-highlight-state-sync-old () {
 
 afu-rh-highlight-state-sync-cur () {
   local -a cur; : ${(A)cur::=${=afu_rh_state[cur]-}}
-  [[ -n ${cur} ]] && region_highlight+=("$cur[2,-1]")
+  if [[ -n ${cur} ]] &&
+     { [[ -n ${region_highlight} ]] &&
+       [[ -z ${(M)region_highlight:#"$cur[2,-1]"} ]] } ||
+     [[ -z ${region_highlight} ]]; then
+    region_highlight+="$cur[2,-1]"
+  fi
 }
 
 afu-rh-highlight-maybe () {
@@ -526,7 +531,7 @@ afu-rh-clear-maybe () {
 afu-rh-finish () {
   local -a cur; : ${(A)cur::=${=afu_rh_state[cur]-}}
   [[ -n "$cur" ]] && [[ "$cur[1]" == completion/* ]] && { afu-rh-clear-maybe }
-  region_highlight+=("$1")
+  region_highlight+="$1"
 }
 
 afu-clearing-maybe () {
@@ -801,7 +806,7 @@ auto-fu () {
   else
     BUFFER="$buffer_cur"
     CURSOR="$cursor_cur"
-    zle list-choices
+    with-afu-completer-vars zle list-choices
   fi
 }
 zle -N auto-fu
