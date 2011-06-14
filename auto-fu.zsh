@@ -640,6 +640,10 @@ with-afu-completer-tracking () {
   # _afu_approximate and afu_match.
   afu_approximate_correcting_p=
   afu_match_ret=
+
+  # tracking current complete-word have been called from _match handling code
+  # in with-afu-menuselecting-handling (see also afu-comppre)
+  afu_match_rec_p=
 }
 
 # XXX: see also with-afu-region-highlight-saving
@@ -942,7 +946,7 @@ with-afu-menuselecting-handling () {
       [[ -n ${afu_match_ret-} ]] && {
         # accept-line-ish does not involve any auto-stuff, so turn on.
         [[ $KEYS[-1] == $'\015' ]] && force_menuselect_off_p=
-        { afu-hmbk-selected-key-p } && return 0 || return 1
+        afu_match_rec_p=t; { afu-hmbk-selected-key-p } && return 0 || return 1
       }
 
       { afu-hmbk-selected-key-p } || {
@@ -1034,6 +1038,10 @@ afu-comppre () {
     local tmp="${${:-$PREFIX$SUFFIX}#[~=]}"
     [[ "$tmp:q" = "$tmp" ]] && return
     : ${(A)_completers::=${_completers:#(_afu)#_approximate}}
+
+    # Don't invoke any completers with-afu-menuselecting-handling's
+    # _matching code is being taken into account.
+    [[ "${afu_match_rec_p}" == t ]] && _completers=()
   }
 }
 
