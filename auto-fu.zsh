@@ -555,14 +555,13 @@ with-afu-region-highlight-saving () {
   local -a rh; : ${(A)rh::=$region_highlight}
   region_highlight=()
   {
-    local h; for h in $rh; do
-      local -a tmp; : ${(A)tmp::=${=h}}
-      (($tmp[1] <= $CURSOR + 1)) && {
-        (($tmp[2] <= $CURSOR + 1)) || ((tmp[2] = $CURSOR - 1))
-        # XXX: disappears the highlights on the buffer at the part of the
-        # menu selection though.
+    local h; local -a tmp
+    for h in $rh; do
+      : ${(A)tmp::=${=h}}
+      { ((CURSOR > $tmp[1]+1)) && ((CURSOR < $tmp[2])) } || \
+        # XXX: even without auto-fu, disappears the highlights on the buffer
+        # contents at the part of the menu selection though.
         region_highlight+="$tmp[1] $tmp[2] $tmp[3]"
-      }
     done
     "$@"
   } always {
