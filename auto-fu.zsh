@@ -944,8 +944,6 @@ with-afu-menuselecting-handling () {
       # do *NOT* call complete-word after redrawing the current buffer with
       # the old contents (ex: *ab*)
       [[ -n ${afu_match_ret-} ]] && {
-        # accept-line-ish does not involve any auto-stuff, so turn on.
-        [[ $KEYS[-1] == $'\015' ]] && force_menuselect_off_p=
         afu_match_rec_p=t; { afu-hmbk-selected-key-p } && return 0 || return 1
       }
 
