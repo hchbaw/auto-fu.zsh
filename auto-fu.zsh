@@ -927,7 +927,7 @@ with-afu-menuselecting-handling () {
       # _approximating: (just selected the candidate)
       # keep the current buffer and do *NOT* call complete-word.
       [[ -n ${afu_approximate_correcting_p-} ]] && {
-        { afu-hmbk-seleted-key-p } && { force_menuselect_off_p=t; return 0 }
+        { afu-hmbk-selected-key-p } && { force_menuselect_off_p=t; return 0 }
         # TODO: describe the purpose!
         [[ $KEYS[-1] == [[:]] ]] && {
           [[ $LBUFFER[-1] == ' '       ]] && { LBUFFER=$LBUFFER[1,-2] }
@@ -942,10 +942,10 @@ with-afu-menuselecting-handling () {
       [[ -n ${afu_match_ret-} ]] && {
         # accept-line-ish does not involve any auto-stuff, so turn on.
         [[ $KEYS[-1] == $'\015' ]] && force_menuselect_off_p=
-        { afu-hmbk-seleted-key-p } && return 0 || return 1
+        { afu-hmbk-selected-key-p } && return 0 || return 1
       }
 
-      { afu-hmbk-seleted-key-p } || {
+      { afu-hmbk-selected-key-p } || {
         [[ $LBUFFER[-1] == $KEYS[-1] ]] &&
         [[ $LBUFFER[-1] == '/' ]]       && {
           # path-ish ⇒ propagate complete-word by editing LBUFFER
@@ -966,7 +966,7 @@ with-afu-menuselecting-handling () {
   { with-afu-compfuncs zle complete-word }
 }
 
-afu-hmbk-seleted-key-p () {
+afu-hmbk-selected-key-p () {
   [[ $KEYS[-1] == ' ' ]]     && return 0
   [[ $KEYS[-1] == $'\015' ]] && return 0
   [[ $KEYS[-1] == $'\012' ]] && return 0
