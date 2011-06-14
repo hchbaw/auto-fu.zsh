@@ -597,10 +597,10 @@ with-afu~ () { zle auto-fu-extend -- with-afu "$@" }
 
 with-afu-zsh-syntax-highlighting () {
   local -i ret=0
-  local -i hip=0; ((hip=$+functions[_zsh_highlight-zle-buffer]))
+  local -i hip=0; ((hip=$+functions[_zsh_highlight]))
   ((hip==0)) && { "$1" t   "$@[2,-1]"; ret=$? }
   ((hip!=0)) && { "$1" nil "$@[2,-1]"; ret=$? }
-  ((hip==1)) && _zsh_highlight-zle-buffer
+  ((hip==1)) && _zsh_highlight
   ((ret==-1)) || {
     local _ok ck
     afu-rh-highlight-state _ok ck; "$ck"
