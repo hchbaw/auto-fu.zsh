@@ -555,18 +555,47 @@ with-afu-region-highlight-saving () {
   local -a rh; : ${(A)rh::=$region_highlight}
   region_highlight=()
   {
-    local h; local -a tmp
-    for h in $rh; do
+    local h; local -a tmp rhtmp; : ${(A)rhtmp::=$rh}
+    for h in $rhtmp; do
       : ${(A)tmp::=${=h}}
-      { ((CURSOR > $tmp[1]+1)) && ((CURSOR < $tmp[2])) } || \
-        # XXX: even without auto-fu, disappears the highlights on the buffer
-        # contents at the part of the menu selection though.
-        region_highlight+="$tmp[1] $tmp[2] $tmp[3]"
+      if ((PENDING==0)); then
+        afu-rhs-protect rh  afu-rhs-save : "$tmp[@]"
+      else
+        afu-rhs-protect rh  : afu-rhs-kill "$tmp[@]"
+      fi
     done
     "$@"
   } always {
     : ${(A)region_highlight::=$rh}
   }
+}
+
+afu-rhs-save () { region_highlight+="$@"    }
+afu-rhs-kill () { : ${(PA)1::=${(PA)1:#$2}} }
+
+afu-rhs-protect () {
+  # TODO: handle "P" region_highlight
+  local   place="$1"
+  local savefun="$2"
+  local killfun="$3"
+  shift 3
+  local -a a; : ${(A)a::=$@}
+  if [[ -n "$RBUFFER" ]]; then
+    if ((CURSOR > $tmp[2])); then
+      "$savefun" "$a[*]"
+    else
+      "$killfun" $place "$a[*]"
+    fi
+  else
+    if (($a[1] > $#BUFFER)) || (($a[2] > $#BUFFER)); then
+      "$killfun" $place "$a[*]"
+      if (($a[2] > $#BUFFER)); then
+        "$savefun" "$a[1] $#BUFFER $a[3]"
+      fi
+    else
+      "$savefun" "$a[*]"
+    fi
+  fi
 }
 
 with-afu () {
