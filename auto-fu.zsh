@@ -236,63 +236,6 @@ afu_zles=( \
   kill-whole-line kill-word magic-space yank \
 )
 
-autoload +X keymap+widget
-
-() {
-  setopt localoptions extendedglob no_shwordsplit
-  local code=${(S)${functions[keymap+widget]/for w in *
-	do
-/for w in $afu_zles
-  do
-  }/(#b)(\$w-by-keymap \(\) \{*\})/
-  eval \${\${\${\"\$(echo \'$match\')\"}/\\\$w/\$w}//\\\$WIDGET/\$w}
-  }
-  eval "function afu-keymap+widget () { $code }"
-}
-
-# TODO: Do this at the install phase or better.
-typeset -gA afu_rebinds; afu_rebinds=()
-
-function () {
-  setopt localoptions extendedglob
-  local -a match mbegin mend
-  # auto-fu uses complete-word and list-choices as they are not "rebinded".
-  local -a rs; rs=($afu_zles complete-word list-choices)
-  eval "
-    function with-afu-zle-rebinding () {
-      local -a restores
-      {
-        eval \"\$("${rs/(#b)(*)/afu-rebind-expand restores $match;}")\"
-        function afu-zle-force-install () {
-          "$(echo ${afu_zles/(#b)(*)/ \
-              zle -N ${match} ${match}-by-keymap;})"
-          zle -C complete-word .complete-word _main_complete
-          zle -C list-choices .list-choices _main_complete
-        }
-        afu-zle-force-install
-        { \"\$@\" }
-      } always {
-        eval \$restores
-      }
-    }
-  "
-}
-
-afu-rebind-expand () {
-  local place="$1"
-  local w="$2"
-  local x="$widgets[$w]"
-  [[ -z ${(M)afu_zle_contribs:#$w} ]] || return
-  [[ -z ${afu_rebinds[$w]-}        ]] || {
-    echo " $place+=\"${afu_rebinds[$w]}\""; return
-  }
-  [[ $x == user:*-by-keymap    ]] && return
-  [[ $x == (user|completion):* ]] || return
-  local f="${x#*:}"
-  [[ $x == completion:* ]] && echo " $place+=\"zle -C $w ${f/:/ };\" "
-  [[ $x != completion:* ]] && echo " $place+=\"zle -N $w $f;\" "
-}
-
 afu-install () {
   zstyle -t ':auto-fu:var' misc-installed-p || {
     zmodload zsh/parameter 2>/dev/null || {
@@ -639,142 +582,6 @@ with-afu-zsh-syntax-highlighting () {
 # XXX: redefined!
 zle -N auto-fu-extend with-afu-zsh-syntax-highlighting
 
-afu-register-zle-afu-raw () {
-  local afufun="$1"
-  local rawzle="$2"
-  shift 2
-  eval "function $afufun () { with-afu~ $rawzle $@; }; zle -N $afufun"
-}
-
-afu-register-zle-afu () {
-  local afufun="$1"
-  local rawzle=".${afufun#*+}"
-  afu-register-zle-afu-raw $afufun $rawzle $afu_zles
-}
-
-afu-initialize-zle-afu () {
-  local z
-  for z in $afu_zles ;do
-    afu-register-zle-afu afu+$z
-  done
-}
-
-afu-install-forall () {
-  local a; for a in "$@"; do
-    "$a"
-  done
-}
-
-typeset -ga afu_zle_contrib_installs; afu_zle_contrib_installs=()
-
-(($+AUTO_FU_CONTRIBKEYMAPS)) || AUTO_FU_CONTRIBKEYMAPS=(main emacs zex zed)
-
-typeset -ga afu_zle_contrib_mapped_commands; afu_zle_contrib_mapped_commands=()
-
-typeset -ga afu_zle_contribs; afu_zle_contribs=()
-
-afu-initialize-zle-contrib () { afu-install-forall $afu_zle_contrib_installs }
-
-afu-initialize-register-zle-contrib () {
-  local fname="$1"
-  local zcomp="$2"
-  local builtinname="$3"
-  local userfunname="$4"
-  shift 4
-  local -a keymaps; : ${(A)keymaps::=$@}
-  afu_zle_contrib_installs+="$fname"
-  eval "
-    ${fname}-p () {
-      [[ -n \${afu_zcompiling_p-} ]] &&
-        ([[ -n \${AUTO_FU_ZCOMPILE_ZLECONTRIB-} ]] ||
-         [[ -n \${${zcomp}-} ]]) || {
-        [[ -z \${afu_zcompiling_p-} ]]
-      }
-    }
-    ${fname}  () { ${fname}-p && ${fname}~ }
-    ${fname}~ () {
-      zle -N ${builtinname} ${builtinname}-by-keymap # Iffy. see keymap+widgets
-      afu_zle_contribs+=${builtinname}
-      local k; for k in ${keymaps}; do
-        afu_zle_contrib_mapped_commands+=\${k}+${builtinname}
-        ((\$+widgets[\${k}+${builtinname}])) ||\
-          zle -N \${k}+${builtinname} ${userfunname}
-      done
-      zle -N afu+${userfunname} ${userfunname}
-      afu-register-zle-afu-raw \
-        afu+${builtinname} afu+${userfunname} afu+${userfunname} \$afu_zles
-    }
-  "
-}
-
-afu-initialize-register-zle-contrib~ () {
-  afu-initialize-register-zle-contrib \
-    afu-initialize-zle-contrib-"${2}" \
-    AUTO_FU_ZCOMPILE_"${(U)2//-/}" \
-    "$1" "$2" \
-    $AUTO_FU_CONTRIBKEYMAPS
-}
-
-afu-initialize-register-zle-contrib-all () {
-  local bname uname; for bname uname in "$@"; do
-    [[ $bname == $uname ]] && {
-      eval "afu-user-$uname () { $functions[$uname] }"
-      uname="afu-user-$uname"
-      function () {
-        [[ -z ${AUTO_FU_NOCP-} ]] || return
-        [[ -z ${AUTO_FU_NOWARN-} ]] && {
-          echo \
-            "auto-fu:warning: \"$bname\" widget will be defined with\n"\
-            "\"$uname\". This cause that something wrong may be happened."
-          echo
-        }
-      }
-    }
-    afu-initialize-register-zle-contrib~ $bname $uname
-  done
-}
-
-afu-initialize-register-zle-contrib-all~ () {
-  local -a cell;
-  afu-initialize-register-zle-contrib-all-collect-contribs cell &&
-    afu-initialize-register-zle-contrib-all "$cell[@]"
-}
-
-afu-initialize-register-zle-contrib-all-collect-contribs () {
-  local place="$1"
-  zmodload zsh/zleparameter || {
-    echo 'auto-fu:zmodload error.' >&2; return -1
-  }
-  setopt localoptions extendedglob
-  local -a match mbegin mend
-  local -a a
-  local z; for z in $afu_zles; do
-    [[ ${widgets[$z]} == user:(#b)(*) ]] && { a+=$z; a+=$match }
-  done
-  : ${(PA)place::=$a}
-}
-
-afu-initialize-zle-misc-maybe () {
-  afu-register-zle-afu-raw afu+vi-add-eol vi-add-eol vi-add-eol $afu_zles
-  bindkey -M vicmd "A" afu+vi-add-eol
-  afu_rebinds+=(afu+vi-add-eol 'bindkey -M vicmd "A" vi-add-eol')
-}
-
-afu-install afu-install-forall \
-  afu-initialize-zle-afu \
-  afu-initialize-register-zle-contrib-all~ \
-  afu-initialize-zle-contrib \
-  afu-keymap+widget \
-  afu-initialize-zle-misc-maybe
-function () {
-  [[ -z ${AUTO_FU_NOCP-} ]] || return
-  # For backward compatibility
-  zstyle ':auto-fu:highlight' input bold
-  zstyle ':auto-fu:highlight' completion fg=black,bold
-  zstyle ':auto-fu:highlight' completion/one fg=whilte,bold,underline
-  zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
-}
-
 afu-able-p () {
   # XXX: This could be done sanely in the _main_complete or $_comps[x].
   local pred=; zstyle -s ':auto-fu:var' autoablep-function pred
@@ -1029,6 +836,199 @@ afu+complete-word~ () {with-afu-region-highlight-saving afu+complete-word "$@"}
 afu+complete-word~~ () { zle auto-fu-extend -- afu+complete-word~ }
 
 zle -N afu+complete-word afu+complete-word~~
+
+autoload +X keymap+widget
+
+() {
+  setopt localoptions extendedglob no_shwordsplit
+  local code=${(S)${functions[keymap+widget]/for w in *
+	do
+/for w in $afu_zles
+  do
+  }/(#b)(\$w-by-keymap \(\) \{*\})/
+  eval \${\${\${\"\$(echo \'$match\')\"}/\\\$w/\$w}//\\\$WIDGET/\$w}
+  }
+  eval "function afu-keymap+widget () { $code }"
+}
+
+afu-register-zle-afu-raw () {
+  local afufun="$1"
+  local rawzle="$2"
+  shift 2
+  eval "function $afufun () { with-afu~ $rawzle $@; }; zle -N $afufun"
+}
+
+afu-register-zle-afu () {
+  local afufun="$1"
+  local rawzle=".${afufun#*+}"
+  afu-register-zle-afu-raw $afufun $rawzle $afu_zles
+}
+
+afu-initialize-zle-afu () {
+  local z
+  for z in $afu_zles ;do
+    afu-register-zle-afu afu+$z
+  done
+}
+
+afu-install-forall () {
+  local a; for a in "$@"; do
+    "$a"
+  done
+}
+
+typeset -ga afu_zle_contrib_installs; afu_zle_contrib_installs=()
+
+(($+AUTO_FU_CONTRIBKEYMAPS)) || AUTO_FU_CONTRIBKEYMAPS=(main emacs zex zed)
+
+typeset -ga afu_zle_contrib_mapped_commands; afu_zle_contrib_mapped_commands=()
+
+typeset -ga afu_zle_contribs; afu_zle_contribs=()
+
+afu-initialize-zle-contrib () { afu-install-forall $afu_zle_contrib_installs }
+
+afu-initialize-register-zle-contrib () {
+  local fname="$1"
+  local zcomp="$2"
+  local builtinname="$3"
+  local userfunname="$4"
+  shift 4
+  local -a keymaps; : ${(A)keymaps::=$@}
+  afu_zle_contrib_installs+="$fname"
+  eval "
+    ${fname}-p () {
+      [[ -n \${afu_zcompiling_p-} ]] &&
+        ([[ -n \${AUTO_FU_ZCOMPILE_ZLECONTRIB-} ]] ||
+         [[ -n \${${zcomp}-} ]]) || {
+        [[ -z \${afu_zcompiling_p-} ]]
+      }
+    }
+    ${fname}  () { ${fname}-p && ${fname}~ }
+    ${fname}~ () {
+      zle -N ${builtinname} ${builtinname}-by-keymap # Iffy. see keymap+widgets
+      afu_zle_contribs+=${builtinname}
+      local k; for k in ${keymaps}; do
+        afu_zle_contrib_mapped_commands+=\${k}+${builtinname}
+        ((\$+widgets[\${k}+${builtinname}])) ||\
+          zle -N \${k}+${builtinname} ${userfunname}
+      done
+      zle -N afu+${userfunname} ${userfunname}
+      afu-register-zle-afu-raw \
+        afu+${builtinname} afu+${userfunname} afu+${userfunname} \$afu_zles
+    }
+  "
+}
+
+afu-initialize-register-zle-contrib~ () {
+  afu-initialize-register-zle-contrib \
+    afu-initialize-zle-contrib-"${2}" \
+    AUTO_FU_ZCOMPILE_"${(U)2//-/}" \
+    "$1" "$2" \
+    $AUTO_FU_CONTRIBKEYMAPS
+}
+
+afu-initialize-register-zle-contrib-all () {
+  local bname uname; for bname uname in "$@"; do
+    [[ $bname == $uname ]] && {
+      eval "afu-user-$uname () { $functions[$uname] }"
+      uname="afu-user-$uname"
+      function () {
+        [[ -z ${AUTO_FU_NOCP-} ]] || return
+        [[ -z ${AUTO_FU_NOWARN-} ]] && {
+          echo \
+            "auto-fu:warning: \"$bname\" widget will be defined with\n"\
+            "\"$uname\". This cause that something wrong may be happened."
+          echo
+        }
+      }
+    }
+    afu-initialize-register-zle-contrib~ $bname $uname
+  done
+}
+
+afu-initialize-register-zle-contrib-all~ () {
+  local -a cell;
+  afu-initialize-register-zle-contrib-all-collect-contribs cell &&
+    afu-initialize-register-zle-contrib-all "$cell[@]"
+}
+
+afu-initialize-register-zle-contrib-all-collect-contribs () {
+  local place="$1"
+  zmodload zsh/zleparameter || {
+    echo 'auto-fu:zmodload error.' >&2; return -1
+  }
+  setopt localoptions extendedglob
+  local -a match mbegin mend
+  local -a a
+  local z; for z in $afu_zles; do
+    [[ ${widgets[$z]} == user:(#b)(*) ]] && { a+=$z; a+=$match }
+  done
+  : ${(PA)place::=$a}
+}
+
+afu-initialize-zle-misc-maybe () {
+  afu-register-zle-afu-raw afu+vi-add-eol vi-add-eol vi-add-eol $afu_zles
+  bindkey -M vicmd "A" afu+vi-add-eol
+  afu_rebinds+=(afu+vi-add-eol 'bindkey -M vicmd "A" vi-add-eol')
+}
+
+afu-install afu-install-forall \
+  afu-initialize-zle-afu \
+  afu-initialize-register-zle-contrib-all~ \
+  afu-initialize-zle-contrib \
+  afu-keymap+widget \
+  afu-initialize-zle-misc-maybe
+function () {
+  [[ -z ${AUTO_FU_NOCP-} ]] || return
+  # For backward compatibility
+  zstyle ':auto-fu:highlight' input bold
+  zstyle ':auto-fu:highlight' completion fg=black,bold
+  zstyle ':auto-fu:highlight' completion/one fg=whilte,bold,underline
+  zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+}
+
+# TODO: Do this at the install phase or better.
+typeset -gA afu_rebinds; afu_rebinds=()
+
+function () {
+  setopt localoptions extendedglob
+  local -a match mbegin mend
+  # auto-fu uses complete-word and list-choices as they are not "rebinded".
+  local -a rs; rs=($afu_zles complete-word list-choices)
+  eval "
+    function with-afu-zle-rebinding () {
+      local -a restores
+      {
+        eval \"\$("${rs/(#b)(*)/afu-rebind-expand restores $match;}")\"
+        function afu-zle-force-install () {
+          "$(echo ${afu_zles/(#b)(*)/ \
+              zle -N ${match} ${match}-by-keymap;})"
+          zle -C complete-word .complete-word _main_complete
+          zle -C list-choices .list-choices _main_complete
+        }
+        afu-zle-force-install
+        { \"\$@\" }
+      } always {
+        eval \$restores
+      }
+    }
+  "
+}
+
+afu-rebind-expand () {
+  local place="$1"
+  local w="$2"
+  local x="$widgets[$w]"
+  [[ -z ${(M)afu_zle_contribs:#$w} ]] || return
+  [[ -z ${afu_rebinds[$w]-}        ]] || {
+    echo " $place+=\"${afu_rebinds[$w]}\""; return
+  }
+  [[ $x == user:*-by-keymap    ]] && return
+  [[ $x == (user|completion):* ]] || return
+  local f="${x#*:}"
+  [[ $x == completion:* ]] && echo " $place+=\"zle -C $w ${f/:/ };\" "
+  [[ $x != completion:* ]] && echo " $place+=\"zle -N $w $f;\" "
+}
 
 [[ -z ${afu_zcompiling_p-} ]] &&
   unset afu_zles afu_zle_contrib_installs afu_zle_contrib_mapped_commands
