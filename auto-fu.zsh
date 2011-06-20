@@ -250,6 +250,9 @@ autoload +X keymap+widget
   eval "function afu-keymap+widget () { $code }"
 }
 
+# TODO: Do this at the install phase or better.
+typeset -gA afu_rebinds; afu_rebinds=()
+
 function () {
   setopt localoptions extendedglob
   local -a match mbegin mend
@@ -279,6 +282,10 @@ afu-rebind-expand () {
   local place="$1"
   local w="$2"
   local x="$widgets[$w]"
+  [[ -z ${(M)afu_zle_contribs:#$w} ]] || return
+  [[ -z ${afu_rebinds[$w]-}        ]] || {
+    echo " $place+=\"${afu_rebinds[$w]}\""; return
+  }
   [[ $x == user:*-by-keymap    ]] && return
   [[ $x == (user|completion):* ]] || return
   local f="${x#*:}"
@@ -652,36 +659,84 @@ afu-initialize-zle-afu () {
   done
 }
 
-afu-initialize-url-quote-magic-p () {
-  [[ -n ${afu_zcompiling_p-} ]] && [[ -n ${AUTO_FU_ZCOMPILE_URLQUOTEMAGIC-} ]] \
-  || {
-    zmodload zsh/zleparameter &&
-    [[ $widgets[self-insert] == user:url-quote-magic ]]
-  }
-}
-
-afu-initialize-url-quote-magic-maybe () {
-  afu-initialize-url-quote-magic-p &&
-  afu-initialize-url-quote-magic
-}
-
-afu-initialize-url-quote-magic () {
-  zle -N self-insert self-insert-by-keymap # XXX: Iffy. see keymap+widgets
-  zle -N afu+url-quote-magic url-quote-magic
-  afu-register-zle-afu-raw \
-    afu+self-insert afu+url-quote-magic afu+url-quote-magic $afu_zles
-}
-
 afu-install-forall () {
   local a; for a in "$@"; do
     "$a"
   done
 }
 
+typeset -ga afu_zle_contrib_installs; afu_zle_contrib_installs=()
+
+(($+AUTO_FU_CONTRIBKEYMAPS)) || AUTO_FU_CONTRIBKEYMAPS=(main emacs zex zed)
+
+typeset -ga afu_zle_contrib_mapped_commands; afu_zle_contrib_mapped_commands=()
+
+typeset -ga afu_zle_contribs; afu_zle_contribs=()
+
+afu-initialize-zle-contrib () { afu-install-forall $afu_zle_contrib_installs }
+
+afu-initialize-register-zle-contrib () {
+  local fname="$1"
+  local zcomp="$2"
+  local builtinname="$3"
+  local userfunname="$4"
+  shift 4
+  local -a keymaps; : ${(A)keymaps::=$@}
+  afu_zle_contrib_installs+="$fname"
+  eval "
+    ${fname}-p () {
+      [[ -n \${afu_zcompiling_p-} ]] &&
+        ([[ -n \${AUTO_FU_ZCOMPILE_ZLECONTRIB-} ]] ||
+         [[ -n \${${zcomp}-} ]]) || {
+        zmodload zsh/zleparameter &&
+        [[ \$widgets[${builtinname}] == user:${userfunname} ]]
+      }
+    }
+    ${fname}  () { ${fname}-p && ${fname}~ }
+    ${fname}~ () {
+      zle -N ${builtinname} ${builtinname}-by-keymap # Iffy. see keymap+widgets
+      afu_zle_contribs+=${builtinname}
+      local k; for k in ${keymaps}; do
+        afu_zle_contrib_mapped_commands+=\${k}+${builtinname}
+        ((\$+widgets[\${k}+${builtinname}])) ||\
+          zle -N \${k}+${builtinname} ${userfunname}
+      done
+      zle -N afu+${userfunname} ${userfunname}
+      afu-register-zle-afu-raw \
+        afu+${builtinname} afu+${userfunname} afu+${userfunname} \$afu_zles
+    }
+  "
+}
+
+afu-initialize-register-zle-contrib \
+  afu-initialize-zle-contrib-url-quote-magic \
+  AUTO_FU_ZCOMPILE_URLQUOTEMAGIC \
+  self-insert url-quote-magic \
+  $AUTO_FU_CONTRIBKEYMAPS
+
+afu-initialize-register-zle-contrib \
+  afu-initialize-zle-contrib-backward-kill-word-match \
+  AUTO_FU_ZCOMPILE_BACKWARDKILLWORDMATCH \
+  backward-kill-word backward-kill-word-match \
+  $AUTO_FU_CONTRIBKEYMAPS
+
+afu-initialize-register-zle-contrib \
+  afu-initialize-zle-contrib-kill-word-match \
+  AUTO_FU_ZCOMPILE_KILLWORDMATCH \
+  kill-word kill-word-match \
+  $AUTO_FU_CONTRIBKEYMAPS
+
+afu-initialize-zle-misc-maybe () {
+  afu-register-zle-afu-raw afu+vi-add-eol vi-add-eol vi-add-eol $afu_zles
+  bindkey -M vicmd "A" afu+vi-add-eol
+  afu_rebinds+=(afu+vi-add-eol 'bindkey -M vicmd "A" vi-add-eol')
+}
+
 afu-install afu-install-forall \
   afu-initialize-zle-afu \
-  afu-initialize-url-quote-magic-maybe \
-  afu-keymap+widget
+  afu-initialize-zle-contrib \
+  afu-keymap+widget \
+  afu-initialize-zle-misc-maybe
 function () {
   [[ -z ${AUTO_FU_NOCP-} ]] || return
   # For backward compatibility
@@ -878,11 +933,20 @@ auto-fu () {
 }
 zle -N auto-fu
 
-afu-comppre () {}
+afu-comppre () {
+  [[ $LASTWIDGET == afu+*~afu+complete-word ]] && {
+    # XXX: on backward-kill-word-match, ls /usr/share ⇒ ^W^W forces to be in
+    # the menu selecting state (and selecting the first match) without
+    # fiddling these variables as shown below.
+    compstate[old_list]=
+    compstate[insert]=automenu-unambiguous
+  }
+}
 
 afu-comppost () {
   ((compstate[list_lines] + BUFFERLINES + 2 > LINES)) && {
     compstate[list]=''
+    [[ $WIDGET == afu+complete-word ]] || compstate[insert]=''
     zle -M "$compstate[list_lines]($compstate[nmatches]) too many matches..."
   }
 
@@ -937,7 +1001,8 @@ afu+complete-word~~ () { zle auto-fu-extend -- afu+complete-word~ }
 
 zle -N afu+complete-word afu+complete-word~~
 
-[[ -z ${afu_zcompiling_p-} ]] && unset afu_zles
+[[ -z ${afu_zcompiling_p-} ]] &&
+  unset afu_zles afu_zle_contrib_installs afu_zle_contrib_mapped_commands
 
 # NOTE: This is iffy. It dumps the necessary functions into ~/.zsh/auto-fu,
 # then zrecompiles it into ~/.zsh/auto-fu.zwc.
@@ -950,12 +1015,14 @@ afu-clean () {
 afu-install-installer () {
   local match mbegin mend
 
-  eval ${${${"$(<=(cat <<"EOT"
+  eval ${${${${"$(<=(cat <<"EOT"
     auto-fu-install () {
       { $body }
       afu-install
       typeset -ga afu_accept_lines
       afu_accept_lines=($afu_accept_lines)
+      typeset -ga afu_zle_contribs
+      afu_zle_contribs=($afu_zle_contribs)
     }
 EOT
   ))"}/\$body/
@@ -963,10 +1030,25 @@ EOT
       "# afu's all zle widgets expect own keymap+widgets stuff" \
       ${${${(M)${(@f)"$(zle -l -L)"}:#zle -N (afu+*|auto-fu*)}:#(\
         ${(j.|.)afu_zles/(#b)(*)/afu+$match})}/(#b)(*)/$match} \
-      "# keymap+widget machinaries" \
+      "## keymap+widget machinaries" \
       "# ${afu_zles/(#b)(*)/zle -N $match ${match}-by-keymap}" \
-      ${afu_zles/(#b)(*)/zle -N afu+$match})
-    }/\$afu_accept_lines/$afu_accept_lines}
+      ${afu_zles/(#b)(*)/zle -N afu+$match} \
+      "## mapped keymap+widget " \
+      "$(afu-install-installer-expand-mapped-cammonds \
+        $afu_zle_contrib_mapped_commands)"
+      )
+    }/\$afu_accept_lines/$afu_accept_lines
+    }/\$afu_zle_contribs/$afu_zle_contribs}
+}
+
+afu-install-installer-expand-mapped-cammonds () {
+  local -a zles
+  : ${(A)zles::=${(M)${(@f)"$(zle -l -L)"}:#zle -N (${(~j.|.)@})*}}
+  local match mbegin mend
+  print -l \
+    "# zle calls" $zles \
+    "# autoload/zle -N calls" \
+    ${${(u)zles##* }/(#b)(*)/autoload -Uz $match; zle -N $match} \
 }
 
 auto-fu-zcompile () {
@@ -990,7 +1072,7 @@ auto-fu-zcompile () {
     echo "# NOTE: Generated from auto-fu.zsh ($0). Please DO NOT EDIT."; echo
     echo "$(functions \
       ${fs:#(afu-register-*|afu-initialize-*|afu-keymap+widget|\
-        afu-clean|afu-install-installer|auto-fu-zcompile)})"
+        afu-clean|afu-install-installer*|auto-fu-zcompile)})"
   }>! ${d}/auto-fu
   echo -n '* '; autoload -U zrecompile && zrecompile -p -R ${g} && {
     zmodload zsh/datetime
