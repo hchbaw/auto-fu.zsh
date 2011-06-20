@@ -688,8 +688,7 @@ afu-initialize-register-zle-contrib () {
       [[ -n \${afu_zcompiling_p-} ]] &&
         ([[ -n \${AUTO_FU_ZCOMPILE_ZLECONTRIB-} ]] ||
          [[ -n \${${zcomp}-} ]]) || {
-        zmodload zsh/zleparameter &&
-        [[ \$widgets[${builtinname}] == user:${userfunname} ]]
+        [[ -z \${afu_zcompiling_p-} ]]
       }
     }
     ${fname}  () { ${fname}-p && ${fname}~ }
@@ -708,23 +707,52 @@ afu-initialize-register-zle-contrib () {
   "
 }
 
-afu-initialize-register-zle-contrib \
-  afu-initialize-zle-contrib-url-quote-magic \
-  AUTO_FU_ZCOMPILE_URLQUOTEMAGIC \
-  self-insert url-quote-magic \
-  $AUTO_FU_CONTRIBKEYMAPS
+afu-initialize-register-zle-contrib~ () {
+  afu-initialize-register-zle-contrib \
+    afu-initialize-zle-contrib-"${2}" \
+    AUTO_FU_ZCOMPILE_"${(U)2//-/}" \
+    "$1" "$2" \
+    $AUTO_FU_CONTRIBKEYMAPS
+}
 
-afu-initialize-register-zle-contrib \
-  afu-initialize-zle-contrib-backward-kill-word-match \
-  AUTO_FU_ZCOMPILE_BACKWARDKILLWORDMATCH \
-  backward-kill-word backward-kill-word-match \
-  $AUTO_FU_CONTRIBKEYMAPS
+afu-initialize-register-zle-contrib-all () {
+  local bname uname; for bname uname in "$@"; do
+    [[ $bname == $uname ]] && {
+      eval "afu-user-$uname () { $functions[$uname] }"
+      uname="afu-user-$uname"
+      function () {
+        [[ -z ${AUTO_FU_NOCP-} ]] || return
+        [[ -z ${AUTO_FU_NOWARN-} ]] && {
+          echo \
+            "auto-fu:warning: \"$bname\" widget will be defined with\n"\
+            "\"$uname\". This cause that something wrong may be happened."
+          echo
+        }
+      }
+    }
+    afu-initialize-register-zle-contrib~ $bname $uname
+  done
+}
 
-afu-initialize-register-zle-contrib \
-  afu-initialize-zle-contrib-kill-word-match \
-  AUTO_FU_ZCOMPILE_KILLWORDMATCH \
-  kill-word kill-word-match \
-  $AUTO_FU_CONTRIBKEYMAPS
+afu-initialize-register-zle-contrib-all~ () {
+  local -a cell;
+  afu-initialize-register-zle-contrib-all-collect-contribs cell &&
+    afu-initialize-register-zle-contrib-all "$cell[@]"
+}
+
+afu-initialize-register-zle-contrib-all-collect-contribs () {
+  local place="$1"
+  zmodload zsh/zleparameter || {
+    echo 'auto-fu:zmodload error.' >&2; return -1
+  }
+  setopt localoptions extendedglob
+  local -a match mbegin mend
+  local -a a
+  local z; for z in $afu_zles; do
+    [[ ${widgets[$z]} == user:(#b)(*) ]] && { a+=$z; a+=$match }
+  done
+  : ${(PA)place::=$a}
+}
 
 afu-initialize-zle-misc-maybe () {
   afu-register-zle-afu-raw afu+vi-add-eol vi-add-eol vi-add-eol $afu_zles
@@ -734,6 +762,7 @@ afu-initialize-zle-misc-maybe () {
 
 afu-install afu-install-forall \
   afu-initialize-zle-afu \
+  afu-initialize-register-zle-contrib-all~ \
   afu-initialize-zle-contrib \
   afu-keymap+widget \
   afu-initialize-zle-misc-maybe
