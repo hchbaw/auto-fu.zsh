@@ -877,6 +877,8 @@ afu-install-forall () {
   done
 }
 
+typeset -gA afu_rebinds; afu_rebinds=()
+
 typeset -ga afu_zle_contrib_installs; afu_zle_contrib_installs=()
 
 (($+AUTO_FU_CONTRIBKEYMAPS)) || AUTO_FU_CONTRIBKEYMAPS=(main emacs zex zed)
@@ -966,35 +968,11 @@ afu-initialize-register-zle-contrib-all-collect-contribs () {
   : ${(PA)place::=$a}
 }
 
-afu-initialize-zle-misc-maybe () {
-  afu-register-zle-afu-raw afu+vi-add-eol vi-add-eol vi-add-eol $afu_zles
-  bindkey -M vicmd "A" afu+vi-add-eol
-  afu_rebinds+=(afu+vi-add-eol 'bindkey -M vicmd "A" vi-add-eol')
-}
-
-afu-install afu-install-forall \
-  afu-initialize-zle-afu \
-  afu-initialize-register-zle-contrib-all~ \
-  afu-initialize-zle-contrib \
-  afu-keymap+widget \
-  afu-initialize-zle-misc-maybe
-function () {
-  [[ -z ${AUTO_FU_NOCP-} ]] || return
-  # For backward compatibility
-  zstyle ':auto-fu:highlight' input bold
-  zstyle ':auto-fu:highlight' completion fg=black,bold
-  zstyle ':auto-fu:highlight' completion/one fg=whilte,bold,underline
-  zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
-}
-
-# TODO: Do this at the install phase or better.
-typeset -gA afu_rebinds; afu_rebinds=()
-
-function () {
+afu-initialize-rebinds () {
   setopt localoptions extendedglob
   local -a match mbegin mend
   # auto-fu uses complete-word and list-choices as they are not "rebinded".
-  local -a rs; rs=($afu_zles complete-word list-choices)
+  local -a rs; rs=($afu_zles complete-word list-choices ${(k)afu_rebinds})
   eval "
     function with-afu-zle-rebinding () {
       local -a restores
@@ -1028,6 +1006,50 @@ afu-rebind-expand () {
   local f="${x#*:}"
   [[ $x == completion:* ]] && echo " $place+=\"zle -C $w ${f/:/ };\" "
   [[ $x != completion:* ]] && echo " $place+=\"zle -N $w $f;\" "
+}
+
+afu-install~ () {
+  afu-install afu-install-forall \
+    afu-initialize-zle-afu \
+    "$@" \
+    afu-initialize-zle-contrib \
+    afu-keymap+widget \
+    afu-initialize-rebinds
+  function () {
+    [[ -z ${AUTO_FU_NOCP-} ]] || return
+    # For backward compatibility
+    zstyle ':auto-fu:highlight' input bold
+    zstyle ':auto-fu:highlight' completion fg=black,bold
+    zstyle ':auto-fu:highlight' completion/one fg=whilte,bold,underline
+    zstyle ':auto-fu:var' postdisplay $'\n-azfu-'
+  }
+}
+
+afu-initialize-zcompile-register-zle-contrib-common () {
+  afu-initialize-register-zle-contrib~ self-insert url-quote-magic
+  afu-initialize-register-zle-contrib~ backward-kill-word{,-match}
+  afu-initialize-register-zle-contrib~ kill-word{,-match}
+}
+
+afu-initialize-zle-misc () {
+  afu-register-zle-afu-raw afu+vi-add-eol vi-add-eol vi-add-eol $afu_zles
+  bindkey -M vicmd "A" afu+vi-add-eol
+  afu_rebinds+=(afu+vi-add-eol 'bindkey -M vicmd "A" vi-add-eol')
+}
+
+() {
+  (($+AUTO_FU_INITIALIZE)) || {
+    local -a AUTO_FU_INITIALIZE; AUTO_FU_INITIALIZE=()
+    local -a is; is=()
+    if [[ -z ${afu_zcompiling_p-} ]]; then
+      is+=afu-initialize-register-zle-contrib-all~
+    else
+      is+=afu-initialize-zcompile-register-zle-contrib-common
+    fi
+    [[ -z ${AUTO_FU_NOCP-} ]] || is+=afu-initialize-zle-misc
+    : ${(A)AUTO_FU_INITIALIZE::=$is}
+  }
+  afu-install~ "$AUTO_FU_INITIALIZE[@]"
 }
 
 [[ -z ${afu_zcompiling_p-} ]] &&
@@ -1071,6 +1093,7 @@ EOT
 }
 
 afu-install-installer-expand-mapped-cammonds () {
+  (( $# )) || return
   local -a zles
   : ${(A)zles::=${(M)${(@f)"$(zle -l -L)"}:#zle -N (${(~j.|.)@})*}}
   local match mbegin mend
