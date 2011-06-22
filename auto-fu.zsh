@@ -885,7 +885,7 @@ typeset -ga afu_zle_contrib_installs; afu_zle_contrib_installs=()
 
 typeset -ga afu_zle_contrib_mapped_commands; afu_zle_contrib_mapped_commands=()
 
-typeset -ga afu_zle_contribs; afu_zle_contribs=()
+typeset -gA afu_zle_contribs; afu_zle_contribs=()
 
 afu-initialize-zle-contrib () { afu-install-forall $afu_zle_contrib_installs }
 
@@ -893,8 +893,10 @@ afu-initialize-register-zle-contrib () {
   local fname="$1"
   local zcomp="$2"
   local builtinname="$3"
-  local userfunname="$4"
-  shift 4
+  local    afunname="$4"
+  local usebuiltinp="$5"
+  local    nfunname="$6"
+  shift 6
   local -a keymaps; : ${(A)keymaps::=$@}
   afu_zle_contrib_installs+="$fname"
   eval "
@@ -908,43 +910,54 @@ afu-initialize-register-zle-contrib () {
     ${fname}  () { ${fname}-p && ${fname}~ }
     ${fname}~ () {
       zle -N ${builtinname} ${builtinname}-by-keymap # Iffy. see keymap+widgets
-      afu_zle_contribs+=${builtinname}
+      afu_zle_contribs+=(${builtinname} $afunname)
       local k; for k in ${keymaps}; do
         afu_zle_contrib_mapped_commands+=\${k}+${builtinname}
         ((\$+widgets[\${k}+${builtinname}])) ||\
-          zle -N \${k}+${builtinname} ${userfunname}
+          zle -N \${k}+${builtinname} ${nfunname}
       done
-      zle -N afu+${userfunname} ${userfunname}
+
+      if [[ "${usebuiltinp}" == t ]]; then
+        afu-builtin-${builtinname} () { zle .${builtinname} }
+        zle -N afu+${afunname} afu-builtin-${builtinname}
+      else
+        zle -N afu+${afunname} ${afunname}
+      fi
+
       afu-register-zle-afu-raw \
-        afu+${builtinname} afu+${userfunname} afu+${userfunname} \$afu_zles
+        afu+${builtinname} afu+${afunname} afu+${afunname} \$afu_zles
     }
   "
 }
 
 afu-initialize-register-zle-contrib~ () {
+  [[ -z "${4-}" ]] && 4="$2"
   afu-initialize-register-zle-contrib \
     afu-initialize-zle-contrib-"${2}" \
     AUTO_FU_ZCOMPILE_"${(U)2//-/}" \
-    "$1" "$2" \
+    "$1" "$2" "$3" "$4" \
     $AUTO_FU_CONTRIBKEYMAPS
+}
+
+afu-initialize-register-zle-contrib~~ () {
+  # XXX: _zsh_highlight
+  local n="afu-${2}&_zsh_highlight"
+  eval "${(q)n} () { $2 && _zsh_highlight }"
+  afu-initialize-register-zle-contrib~ "$1" "$2" nil "${(q)n}"
 }
 
 afu-initialize-register-zle-contrib-all () {
   local bname uname; for bname uname in "$@"; do
-    [[ $bname == $uname ]] && {
+    if [[ $bname == $uname ]]; then
+      # XXX: assume _zsh_highlight for now
       eval "afu-user-$uname () { $functions[$uname] }"
       uname="afu-user-$uname"
-      function () {
-        [[ -z ${AUTO_FU_NOCP-} ]] || return
-        [[ -z ${AUTO_FU_NOWARN-} ]] && {
-          echo \
-            "auto-fu:warning: \"$bname\" widget will be defined with\n"\
-            "\"$uname\". This cause that something wrong may be happened."
-          echo
-        }
-      }
-    }
-    afu-initialize-register-zle-contrib~ $bname $uname
+      afu-initialize-register-zle-contrib~ $bname $uname t
+    elif (($+functions[_zsh_highlight])); then
+      afu-initialize-register-zle-contrib~~ $bname $uname
+    else
+      afu-initialize-register-zle-contrib~ $bname $uname nil
+    fi
   done
 }
 
@@ -997,8 +1010,8 @@ afu-rebind-expand () {
   local place="$1"
   local w="$2"
   local x="$widgets[$w]"
-  [[ -z ${(M)afu_zle_contribs:#$w} ]] || return
-  [[ -z ${afu_rebinds[$w]-}        ]] || {
+  [[ -z ${(Mk)afu_zle_contribs:#$w} ]] || return
+  [[ -z ${afu_rebinds[$w]-}         ]] || {
     echo " $place+=\"${afu_rebinds[$w]}\""; return
   }
   [[ $x == user:*-by-keymap    ]] && return
@@ -1026,9 +1039,9 @@ afu-install~ () {
 }
 
 afu-initialize-zcompile-register-zle-contrib-common () {
-  afu-initialize-register-zle-contrib~ self-insert url-quote-magic
-  afu-initialize-register-zle-contrib~ backward-kill-word{,-match}
-  afu-initialize-register-zle-contrib~ kill-word{,-match}
+  afu-initialize-register-zle-contrib~~ self-insert url-quote-magic
+  afu-initialize-register-zle-contrib~~ backward-kill-word{,-match}
+  afu-initialize-register-zle-contrib~~ kill-word{,-match}
 }
 
 afu-initialize-zle-misc () {
@@ -1072,7 +1085,7 @@ afu-install-installer () {
       afu-install
       typeset -ga afu_accept_lines
       afu_accept_lines=($afu_accept_lines)
-      typeset -ga afu_zle_contribs
+      typeset -gA afu_zle_contribs
       afu_zle_contribs=($afu_zle_contribs)
     }
 EOT
@@ -1089,7 +1102,7 @@ EOT
         $afu_zle_contrib_mapped_commands)"
       )
     }/\$afu_accept_lines/$afu_accept_lines
-    }/\$afu_zle_contribs/$afu_zle_contribs}
+    }/\$afu_zle_contribs/${(kv)afu_zle_contribs}}
 }
 
 afu-install-installer-expand-mapped-cammonds () {
@@ -1100,7 +1113,9 @@ afu-install-installer-expand-mapped-cammonds () {
   print -l \
     "# zle calls" $zles \
     "# autoload/zle -N calls" \
-    ${${(u)zles##* }/(#b)(*)/autoload -Uz $match; zle -N $match} \
+    ${${(u)zles/zle -N (#b)*+(*) */
+      autoload -Uz $afu_zle_contribs[$match]
+      zle -N $afu_zle_contribs[$match]}} \
 }
 
 auto-fu-zcompile () {
