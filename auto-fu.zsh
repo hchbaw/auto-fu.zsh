@@ -1138,14 +1138,20 @@ afu-install-tracking-completer () {
 EOT
   )"
 }
-afu-install-tracking-completer _afu_approximate afu_approximate_correcting_p
-afu-install-tracking-completer _afu_match afu_match_ret t afu-match-init-maybe
+afu-install-tracking-completer _afu_approximate afu_approximate_correcting_p t afu-completer-init-maybe
+afu-install-tracking-completer _afu_match afu_match_ret t afu-completer-init-maybe
 
-afu-match-init-maybe () {
+afu-completer-init-maybe () {
   local -i ret="$1"
-  # Special treatment during the _match completer invocation.
+  # Special treatment during the completer invocation.
+  # _match and _approximate are considered for now, see callings of
+  # afu-install-tracking-completer.
   ((!$ret)) && {
-    _message "$BUFFER"
+    local b="$BUFFER"
+    if ((${(m)#b} + 4 > COLUMNS - 1)); then
+      : ${b::=%B...%b${(ml:$((COLUMNS - 4 - 3)):::::)b}}
+    fi
+    _message "%B{%b $b %B}%b"
   }
   return ret
 }
