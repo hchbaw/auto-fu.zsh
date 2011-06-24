@@ -142,14 +142,47 @@
 # XXX: zsh-syntax-highlighting
 # I'm a very fond of this fancy zsh script `zsh-syntax-highlighting'.
 # https://github.com/nicoulaj/zsh-syntax-highlighting
-# If you want to integrate auto-fu.zsh with the zsh-syntax-highlighting,
-# please source the zsh-syntax-highlighting.zsh before this file.
+# If you want to integrate auto-fu.zsh with zsh-syntax-highlighting,
+# please source zsh-syntax-highlighting before this file.
 
-# XXX: use with the url-quote-magic.
-# Please set up the url-quote-magic before sourcing the auto-fu.zsh.
-# If you zcompile the auto-fu.zsh with auto-fu-zcompile, it is likely not
-# known the presence of the url-quote-magic at the zcompile time. If it
-# isn't, please set the variable AUTO_FU_ZCOMPILE_URLQUOTEMAGIC=t.
+# XXX: use with the url-quote-magic, select-word-style and more.
+# Please set up url-quote-magic and select-word-style before sourcing
+# auto-fu.zsh.
+#
+# If you zcompile auto-fu.zsh with auto-fu-zcompile, it will likely not be
+# known the presence of these contrib's widgets at the zcompile-time. In
+# this case for example to use with url-quote-magic, please set the variable
+# AUTO_FU_ZCOMPILE_URLQUOTEMAGIC=t at the zcompile-time.
+# AUTO_FU_ZCOMPILE_* variables will be checked to see if the corresponding
+# widget should be set up to use with at the zcompile-time. For example, to
+# use with 'kill-word-match' widget, AUTO_FU_ZCQMPILE_KILLWORDMATCH=t shoud
+# be specified at that time.
+# Note: AUTO_FU_ZCOMPILE_* variable naming scheme is "${(U)widgetname//-/}".
+# Also AUTO_FU_ZCOMPILE_ZLECONTRIB=t will be checked to see if all those
+# well-known contrib widgets should be used with.
+# For now,
+# url-quote-magic, kill-word-match and backword-kill-word-match
+# are supported. In other words, I use them :)
+# For example to zcompile all those contrib's widgets to be used with,
+# please do the following:
+#>
+#    % A=/path/to/auto-fu.zsh; (zsh -c "source $A && AUTO_FU_ZCOMPILE_ZLECONTRIB=t && auto-fu-zcompile $A ~/.zsh")
+#<
+# If you replace 'AUTO_FU_ZCOMPILE_ZLECONTRIB=t' to
+# 'AUTO_FU_ZCOMPILE_URLQUOTEMAGIC=t', only url-quote-magic will to be used.
+# If you want to use some more customized widgets which are not in the
+# above, you could define some functions to cooperate with those widgets and
+# push them to AUTO_FU_INITIALIZE.
+
+# XXX: use with both zsh-syntax-highlighting and url-quote-magic,
+# select-word-style and more.
+# To detect url-quote-magic and select-word-style (and some other), please
+# source zsh-syntax-highlighting after all those contrib widgets but before
+# auto-fu.zsh;
+# (1) source and setup url-quote-magic and select-word-style,
+# (2) source zsh-syntax-highlighting and
+# (3) source auto-fu.zsh at the end, please.
+# Please keep the order intact.
 
 # TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
 # TODO: pause auto stuff until something happens. ("next magic-space" etc)
