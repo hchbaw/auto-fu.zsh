@@ -877,7 +877,8 @@ afu-install-forall () {
   done
 }
 
-typeset -gA afu_rebinds; afu_rebinds=()
+typeset -gA afu_rebinds_pre; afu_rebinds_pre=()
+typeset -gA afu_rebinds_post; afu_rebinds_post=()
 
 typeset -ga afu_zle_contrib_installs; afu_zle_contrib_installs=()
 
@@ -985,7 +986,7 @@ afu-initialize-rebinds () {
   setopt localoptions extendedglob
   local -a match mbegin mend
   # auto-fu uses complete-word and list-choices as they are not "rebinded".
-  local -a rs; rs=($afu_zles complete-word list-choices ${(k)afu_rebinds})
+  local -a rs; rs=($afu_zles complete-word list-choices ${(k)afu_rebinds_post})
   eval "
     function with-afu-zle-rebinding () {
       local -a restores
@@ -996,11 +997,23 @@ afu-initialize-rebinds () {
               zle -N ${match} ${match}-by-keymap;})"
           zle -C complete-word .complete-word _main_complete
           zle -C list-choices .list-choices _main_complete
+          "$(echo ${(v)afu_rebinds_pre/(#b)(*)/$match;})"
         }
         afu-zle-force-install
         { \"\$@\" }
       } always {
-        eval \$restores
+        eval \"function afu-zle-rebind-restore () { \$restores }\"
+        afu-zle-rebind-restore
+
+        # XXX: redefined!
+        function "\$0" () {
+          {
+            afu-zle-force-install
+            { \"\$@\" }
+          } always {
+            afu-zle-rebind-restore
+          }
+        }
       }
     }
   "
@@ -1011,14 +1024,22 @@ afu-rebind-expand () {
   local w="$2"
   local x="$widgets[$w]"
   [[ -z ${(Mk)afu_zle_contribs:#$w} ]] || return
-  [[ -z ${afu_rebinds[$w]-}         ]] || {
-    echo " $place+=\"${afu_rebinds[$w]}\""; return
+  [[ -z ${afu_rebinds_post[$w]-}     ]] || {
+    echo " $place+=\"${afu_rebinds_post[$w]}\""; return
   }
   [[ $x == user:*-by-keymap    ]] && return
   [[ $x == (user|completion):* ]] || return
   local f="${x#*:}"
   [[ $x == completion:* ]] && echo " $place+=\"zle -C $w ${f/:/ };\" "
   [[ $x != completion:* ]] && echo " $place+=\"zle -N $w $f;\" "
+}
+
+afu-rebind-add () {
+  local name="$1"
+  local  pre="$2"
+  local post="$3"
+  afu_rebinds_pre+=("$name" "$2")
+  afu_rebinds_post+=("$name" "$3")
 }
 
 afu-install~ () {
@@ -1046,8 +1067,9 @@ afu-initialize-zcompile-register-zle-contrib-common () {
 
 afu-initialize-zle-misc () {
   afu-register-zle-afu-raw afu+vi-add-eol vi-add-eol vi-add-eol $afu_zles
-  bindkey -M vicmd "A" afu+vi-add-eol
-  afu_rebinds+=(afu+vi-add-eol 'bindkey -M vicmd "A" vi-add-eol')
+  afu-rebind-add afu+vi-add-eol \
+    'bindkey -M vicmd "A" afu+vi-add-eol' \
+    'bindkey -M vicmd "A" vi-add-eol'
 }
 
 () {
