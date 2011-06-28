@@ -581,19 +581,17 @@ afu-rhs-protect () {
   shift 3
   local -a a; : ${(A)a::=$@}
   if [[ -n "$RBUFFER" ]]; then
-    if ((CURSOR > $tmp[2])); then
+    if ((CURSOR > $tmp[2])) || [[ $WIDGET == *complete* ]]; then
       "$savefun" "$a[*]"
     else
       "$killfun" $place "$a[*]"
     fi
   else
-    if (($a[1] > $#BUFFER)) || (($a[2] > $#BUFFER)); then
+    if (($a[2] > $#BUFFER)); then
       "$killfun" $place "$a[*]"
-      if (($a[2] > $#BUFFER)); then
-        "$savefun" "$a[1] $#BUFFER $a[3]"
-      fi
+      "$savefun" "$a[1] $#BUFFER $a[3]"
     else
-      "$savefun" "$a[*]"
+      (($a[1] > $#BUFFER)) || "$savefun" "$a[*]"
     fi
   fi
 }
