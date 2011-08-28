@@ -448,8 +448,7 @@ with-afu () {
   afu-clearing-maybe
   ((afu_in_p == 1)) && { afu_in_p=0; BUFFER="$buffer_cur" }
   zle $zlefun && {
-    emulate -L zsh
-    setopt extended_glob nobanghist
+    setopt localoptions extendedglob no_banghist
     local es ds
     zstyle -a ':auto-fu:var' enable es; (( ${#es} == 0 )) && es=(all)
     if [[ -n ${(M)es:#(#i)all} ]]; then
@@ -487,8 +486,8 @@ auto-fu-default-autoable-pred () {
   local -a reply; local -i REPLY REPLY2; local -a areply
   afu-split-shell-arguments
 
-  local word="${reply[REPLY]}"
-  local commandish="${areply[1]}"
+  local word="${reply[REPLY]-}"
+  local commandish="${areply[1]-}"
   local p; for p in $ps; do
     local ret=0; "$p" \
       "$word" "$commandish" \
@@ -530,7 +529,7 @@ afu-autoable-paused-p () { (( afu_paused_p == 0 )) }
 afu-split-shell-arguments () {
   autoload -U split-shell-arguments; split-shell-arguments
   ((REPLY & 1)) && ((REPLY--))
-  ((REPLY2 = ${#reply[REPLY]} + 1))
+  ((REPLY2 = ${#reply[REPLY]-} + 1))
 
   # set up the 'areply'. (Cursor positoin (*))
   # % echo bar && command ls -a* -l | grep foo
@@ -538,7 +537,7 @@ afu-split-shell-arguments () {
   local -i p; local -a tmp
   : ${(A)tmp::=$reply[1,REPLY]}
   p=${tmp[(I)(\||\|\||;|&|&&)]}; ((p)) && ((p+=2)) || ((p=1))
-  while [[ $tmp[p] == (noglob|nocorrect|builtin|command) ]] do ((p+=2)) done;
+  while [[ ${tmp[p]-} == (noglob|nocorrect|builtin|command) ]] do ((p+=2)) done;
   ((p!=1)) && ((p++))
   : ${(A)tmp::=$reply[p,-1]}
   p=${tmp[(I)(\||\|\||;|&|&&)]}; ((p)) && ((p-=2)) || ((p=-1))
@@ -569,7 +568,7 @@ afu-autoable-dots-p () { [[ "${1##*/}" != ("."|"..")  ]] }
 afu-autoable-skip-pred () {
   local place="$1"
   local style="$2"
-  local deffn="$3"
+  local deffn="${3-}"
   local value="${(P)place}"
   local -a skips; skips=(); zstyle -a ':auto-fu:var' "$style" skips
   (($#skips==0)) && [[ -n "$deffn" ]] && { "$deffn" skips }
@@ -618,8 +617,7 @@ with-afu-compfuncs () {
 }
 
 with-afu-completer-vars () {
-  emulate -L zsh
-  unsetopt rec_exact
+  setopt localoptions no_recexact
   local LISTMAX=999999
   with-afu-compfuncs "$@"
 }
@@ -752,8 +750,7 @@ auto-fu-zcompile () {
   local s=${1:?Please specify the source file itself.}
   local d=${2:?Please specify the directory for the zcompiled file.}
   local g=${d}/auto-fu
-  emulate -L zsh
-  setopt extended_glob no_shwordsplit
+  setopt localoptions extendedglob no_shwordsplit
 
   echo "** zcompiling auto-fu in ${d} for a little faster startups..."
   { source ${s} >/dev/null 2>&1 } # Paranoid.
