@@ -222,11 +222,14 @@ afu_zles=( \
 
 autoload +X keymap+widget
 
-{
-  local code=${functions[keymap+widget]/for w in *
+() {
+  setopt localoptions extendedglob no_shwordsplit
+  local code=${(S)${functions[keymap+widget]/for w in *
 	do
 /for w in $afu_zles
   do
+  }/(#b)(\$w-by-keymap \(\) \{*\})/
+  eval \${\${\${\"\$(echo \'$match\')\"}/\\\$w/\$w}//\\\$WIDGET/\$w}
   }
   eval "function afu-keymap+widget () { $code }"
 }
