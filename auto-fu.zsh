@@ -1144,12 +1144,12 @@ afu-install-installer () {
 
   eval ${${${${"$(<=(cat <<"EOT"
     auto-fu-install () {
-      { $body }
-      afu-install
       typeset -ga afu_accept_lines
       afu_accept_lines=($afu_accept_lines)
       typeset -gA afu_zle_contribs
       afu_zle_contribs=($afu_zle_contribs)
+      { $body }
+      afu-install
     }
 EOT
   ))"}/\$body/
