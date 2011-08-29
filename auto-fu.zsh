@@ -974,21 +974,29 @@ afu-initialize-register-zle-contrib~ () {
 }
 
 afu-initialize-register-zle-contrib~~ () {
-  # XXX: _zsh_highlight
-  local n="afu-${2}&_zsh_highlight"
-  eval "${(q)n} () { $2 && _zsh_highlight }"
-  afu-initialize-register-zle-contrib~ "$1" "$2" nil "${(q)n}"
+  # XXX: assume _zsh_highlight
+  afu-initialize-register-zle-contrib~ "$1" "$2" nil "_zsh_highlight_widget_$1"
 }
 
 afu-initialize-register-zle-contrib-all () {
+  setopt localoptions extendedglob
+  local match mbegin mend
   local bname uname; for bname uname in "$@"; do
-    if [[ $bname == $uname ]]; then
-      # XXX: assume _zsh_highlight for now
-      eval "afu-user-$uname () { $functions[$uname] }"
-      uname="afu-user-$uname"
-      afu-initialize-register-zle-contrib~ $bname $uname t
-    elif (($+functions[_zsh_highlight])); then
-      afu-initialize-register-zle-contrib~~ $bname $uname
+    if [[ $uname == _zsh_highlight_widget* ]]; then
+      case ${${functions[$uname]}#$'\tbuiltin zle '} in
+        (.*)
+          # _zsh_highlight only
+          afu-initialize-register-zle-contrib~ $bname $uname t
+          ;;
+        ((#b)(*) '&& _zsh_highlight')
+          # _zsh_highlight plus custom widget
+          afu-initialize-register-zle-contrib~ $bname \
+            ${${widgets[${match}]}#user:} nil $uname
+          ;;
+        (*)
+          echo "auto-fu:zsh-syntax-highlighting code detection failure."
+          ;;
+      esac
     else
       afu-initialize-register-zle-contrib~ $bname $uname nil
     fi
