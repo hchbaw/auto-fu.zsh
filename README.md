@@ -154,6 +154,11 @@ sometimes is *not* needed. (already be entered menu select state.)
 
 History
 
+v0.0.1.12
+fix some options potentially will be reset during the auto-stuff.
+fix afu-keymap+widget to $afu_zles work in custom widgets.
+Thank you very much for the reports, Christian271!
+
 v0.0.1.11
 play nice with banghist.
 Thank you very much for the report, yoshikaw!
