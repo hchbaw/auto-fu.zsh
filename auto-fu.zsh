@@ -721,6 +721,16 @@ with-afu-zsh-syntax-highlighting () {
 # XXX: redefined!
 zle -N auto-fu-extend with-afu-zsh-syntax-highlighting
 
+afu-resume-maybe () {
+  zstyle -t ':auto-fu:var' resume "$WIDGET" && auto-fu-activate
+}
+
+eval "
+with-afu-resume () { afu-resume-maybe; ${widgets[auto-fu-extend]#*:} \"\$@\" }
+"
+# XXX: redefined!
+zle -N auto-fu-extend with-afu-resume
+
 afu-able-p () {
   # XXX: This could be done sanely in the _main_complete or $_comps[x].
   local pred=; zstyle -s ':auto-fu:var' autoablep-function pred
