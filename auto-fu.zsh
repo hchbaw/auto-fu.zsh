@@ -934,6 +934,8 @@ afu+complete-word () {
   afu-clearing-maybe "${1-}"
   { afu-able-p } || { zle complete-word; return; }
 
+  local lastcompp=nil; () { [[ $LASTWIDGET == *complete* ]] && lastcompp=t }
+
   with-afu-completer-vars;
   if ((afu_in_p == 1)); then
     afu_in_p=0; CURSOR="$cursor_new"
@@ -944,30 +946,66 @@ afu+complete-word () {
           [[ "$x" == -* ]] && zle complete-word && return
         };;
       (/) # path-ish  ⇒ propagate auto-fu if it could be
-        { # TODO: this may not be enough.
-          local y="((*-)#directories|all-files|(command|executable)s)"
-          y=${AUTO_FU_PATHITH:-${y}}
-          local -a x; x=${(M)${(@z)"${_lastcomp[tags]}"}:#${~y}}
-          zle complete-word
-          [[ -n $x ]] && zle -U "$LBUFFER[-1]"
-          return
+        { # XXX: directly modify LBUFFER for preventing the auto-stuff, then
+          # insert the suffix to propagate the auto-stuff eventually.
+          local c=$LBUFFER[-1]
+          LBUFFER=$LBUFFER[1,-2]; zle -U "$c"; return
         };;
       (,) # glob-ish  ⇒ activate the `complete-word''s suffix
         BUFFER="$buffer_cur"; zle complete-word;
         return
         ;;
     esac
-    (( $_lastcomp[nmatches]  > 1 )) &&
-      # many matches ⇒ complete-word again to enter the menuselect
-      zle complete-word
-    (( $_lastcomp[nmatches] == 1 )) &&
-      # exact match  ⇒ flag not using _oldlist for the next complete-word
-      _lastcomp[nmatches]=0
+    if [[ $lastcompp == t ]]; then
+      (( $_lastcomp[nmatches]  > 1 )) && [[ $LBUFFER[-1] != [[:space:]] ]] &&
+        # many matches ⇒ complete-word again to enter the menuselect
+        zle complete-word
+      (( $_lastcomp[nmatches] == 1 )) || [[ $LBUFFER[-1] == [[:space:]] ]] && {
+        # exact match  ⇒ flag not using _oldlist for the next complete-word
+        _lastcomp[nmatches]=0
+        local -a old; : ${(A)old::=${=afu_rh_state[old]-}}
+        [[ -n ${old} ]] && [[ -n ${rh} ]] &&
+        { : ${(A)rh::=${rh:#"$old[2,-1]"}} }
+      }
+    fi
   else
     [[ $LASTWIDGET == afu+*~afu+complete-word ]] && {
       afu_in_p=0; BUFFER="$buffer_cur"
     }
-    zle complete-word
+    [[ $LASTWIDGET == auto-fu-deactivate ]] && {
+      _lastcomp[nmatches]=0
+      zle list-choices
+    }
+
+    (($+_lastcomp)) ||
+    { [[ $lastcompp == t ]] && [[ -n $_lastcomp[nmatches] ]] } ||
+    { [[ $LBUFFER[-1] == [[:space:]] ]] } &&
+    { zle complete-word; return $? }
+
+    function () {
+      [[ $_lastcomp[completer] == complete ]] || return
+      [[ -n "$_lastcomp[unambiguous]" ]] || return
+      [[ $_lastcomp[prefix] != $_lastcomp[unambiguous] ]] || return
+      # At this point, expand the ambiguous portion of the buffer.
+      zle complete-word
+    }
+
+    (( $_lastcomp[nmatches] == 0 )) && { return 0 }
+    (( $_lastcomp[nmatches]  > 1 )) && [[ $LBUFFER[-1] != [[:space:]] ]] && {
+      zle complete-word
+      # TODO: check to see if unambiguous stuff is being in effect,
+      # TODO: do something for the next self-insert ought to do some magics.
+      # % t /u/s/d/ ⇒ activate 'debconf' ⇒ insert '/' then BUFFER becomes
+      #  "t /usr/share/debconf/ /"
+      return $?
+    }
+    (( $_lastcomp[nmatches] == 1 )) || [[ $LBUFFER[-1] == [[:space:]] ]] && {
+      local c=$LBUFFER[-1]
+      [[ $c == ' ' ]] && { return 0 }
+      [[ $c == "/" ]] && { LBUFFER=$LBUFFER[1,-2]; zle -U "$c"; return 0 }
+      [[ $c != "/" ]] && { zle complete-word; return $? }
+      return 0
+    }
   fi
 }
 
