@@ -530,6 +530,11 @@ afu-reset () {
   [[ -z ${ps} ]] || POSTDISPLAY=''
 }
 
+# XXX: see also with-afu-region-highlight-saving
+# XXX: see also afu-register-zle-afu-override
+# XXX: see also afu-initialize-zle-misc
+typeset -ga afu_rhs_no_kills; afu_rhs_no_kills=()
+
 with-afu-region-highlight-saving () {
   local -a rh; : ${(A)rh::=$region_highlight}
   region_highlight=()
@@ -538,9 +543,14 @@ with-afu-region-highlight-saving () {
     for h in $rhtmp; do
       : ${(A)tmp::=${=h}}
       if ((PENDING==0)); then
-        afu-rhs-protect rh  afu-rhs-save : "$tmp[@]"
+        if (($#afu_rhs_no_kills != 0)) && \
+           [[ -z ${(M)afu_rhs_no_kills:#$WIDGET} ]]; then
+          afu-rhs-protect rh  afu-rhs-save : afu-rhs-kill "$tmp[@]"
+        else
+          afu-rhs-protect rh  afu-rhs-save : : "$tmp[@]"
+        fi
       else
-        afu-rhs-protect rh  : afu-rhs-kill "$tmp[@]"
+        afu-rhs-protect rh  : afu-rhs-kill afu-rhs-kill "$tmp[@]"
       fi
     done
     "$@"
@@ -557,13 +567,14 @@ afu-rhs-protect () {
   local   place="$1"
   local savefun="$2"
   local killfun="$3"
-  shift 3
+  local rillfun="$4"
+  shift 4
   local -a a; : ${(A)a::=$@}
   if [[ -n "$RBUFFER" ]]; then
     if ((CURSOR > $tmp[2])) || [[ $WIDGET == *complete* ]]; then
       "$savefun" "$a[*]"
     else
-      "$killfun" $place "$a[*]"
+      "$rillfun" $place "$a[*]"
     fi
   else
     if (($a[2] > $#BUFFER)); then
@@ -1106,10 +1117,22 @@ afu-initialize-zcompile-register-zle-contrib-common () {
   afu-initialize-register-zle-contrib~~ kill-word{,-match}
 }
 
+afu-register-zle-afu-override () {
+  local name="$1"
+  local zlefun="$2"
+  local rhskill="$3"
+  local precode="${4-}"
+  local postcode="${5-}"
+  afu-register-zle-afu-raw ${name} ${zlefun} ${zlefun} $afu_zles
+  [[ $rhskill == t ]] && afu_rhs_no_kills+=${name}
+  [[ -n "${precode}" ]] && [[ -n "${postcode}" ]] && {
+    afu-rebind-add ${name} "${precode}" "${postcode}"
+  }
+}
+
 afu-initialize-zle-misc () {
   local b=; v=; for v b in vi-add-eol A vi-add-next a; do
-    afu-register-zle-afu-raw afu+${v} ${v} ${v} $afu_zles
-    afu-rebind-add afu+${v} \
+    afu-register-zle-afu-override afu+${v} ${v} t \
       "bindkey -M vicmd '${b}' afu+${v}" "bindkey -M vicmd 'A' ${v}"
   done
 }
@@ -1143,12 +1166,14 @@ afu-clean () {
 afu-install-installer () {
   local match mbegin mend
 
-  eval ${${${${"$(<=(cat <<"EOT"
+  eval ${${${${${"$(<=(cat <<"EOT"
     auto-fu-install () {
       typeset -ga afu_accept_lines
       afu_accept_lines=($afu_accept_lines)
       typeset -gA afu_zle_contribs
       afu_zle_contribs=($afu_zle_contribs)
+      typeset -ga afu_rhs_no_kills
+      afu_rhs_no_kills=($afu_rhs_no_kills)
       { $body }
       afu-install
     }
@@ -1166,6 +1191,7 @@ EOT
         $afu_zle_contrib_mapped_commands)"
       )
     }/\$afu_accept_lines/$afu_accept_lines
+    }/\$afu_rhs_no_kills/$afu_rhs_no_kills
     }/\$afu_zle_contribs/${(kv)afu_zle_contribs}}
 }
 
