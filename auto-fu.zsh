@@ -616,7 +616,14 @@ with-afu-zsh-syntax-highlighting () {
   local -i hip=0; ((hip=$+functions[_zsh_highlight]))
   ((hip==0)) && { "$1" t   "$@[2,-1]"; ret=$? }
   ((hip!=0)) && { "$1" nil "$@[2,-1]"; ret=$? }
-  ((hip==1)) && _zsh_highlight
+  ((hip==1)) && {
+    if ((afu_in_p==1)); then
+      # XXX: Badness
+      [[ "$BUFFER" != "$buffer_cur" ]] && { _ZSH_HIGHLIGHT_PRIOR_BUFFER="" }
+      ((CURSOR != cursor_cur))         && { _ZSH_HIGHLIGHT_PRIOR_CORSUR=-1 }
+    fi
+    _zsh_highlight
+  }
   ((ret==-1)) || {
     local _ok ck
     afu-rh-highlight-state _ok ck; "$ck"
@@ -774,13 +781,13 @@ with-afu-compfuncs () {
 with-afu-completer-vars () {
   setopt localoptions no_recexact
   local LISTMAX=999999
-  with-afu-compfuncs with-afu-region-highlight-saving "$@"
+  with-afu-compfuncs "$@"
 }
 
 auto-fu () {
   cursor_cur="$CURSOR"
   buffer_cur="$BUFFER"
-  with-afu-completer-vars zle complete-word
+  with-afu-region-highlight-saving with-afu-completer-vars zle complete-word
   cursor_new="$CURSOR"
   buffer_new="$BUFFER"
 
@@ -800,6 +807,7 @@ auto-fu () {
 
     if [[ "$buffer_cur" != "$buffer_new" ]] || ((cursor_cur != cursor_new))
     then afu_in_p=1; {
+      local -a region_highlight; region_highlight=()
       local BUFFER="$buffer_cur"
       local CURSOR="$cursor_cur"
       with-afu-completer-vars zle list-choices
