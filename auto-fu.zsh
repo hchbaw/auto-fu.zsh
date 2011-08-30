@@ -1043,7 +1043,7 @@ afu-initialize-rebinds () {
         afu-zle-force-install
         { \"\$@\" }
       } always {
-        eval \"function afu-zle-rebind-restore () { \$restores }\"
+        eval \"function afu-zle-rebind-restore () { \${(j.;.)restores} }\"
         afu-zle-rebind-restore
 
         # XXX: redefined!
@@ -1064,15 +1064,15 @@ afu-rebind-expand () {
   local place="$1"
   local w="$2"
   local x="$widgets[$w]"
-  [[ -z ${(Mk)afu_zle_contribs:#$w} ]] || return
-  [[ -z ${afu_rebinds_post[$w]-}     ]] || {
+  [[ -n ${afu_zle_contribs} && -n ${(Mk)afu_zle_contribs:#$w} ]] && return
+  [[ -z ${afu_rebinds_post[$w]-} ]] || {
     echo " $place+=\"${afu_rebinds_post[$w]}\""; return
   }
   [[ $x == user:*-by-keymap    ]] && return
   [[ $x == (user|completion):* ]] || return
   local f="${x#*:}"
-  [[ $x == completion:* ]] && echo " $place+=\"zle -C $w ${f/:/ };\" "
-  [[ $x != completion:* ]] && echo " $place+=\"zle -N $w $f;\" "
+  [[ $x == completion:* ]] && echo " $place+=\"zle -C $w ${f/:/ }\" "
+  [[ $x != completion:* ]] && echo " $place+=\"zle -N $w $f\" "
 }
 
 afu-rebind-add () {
@@ -1107,10 +1107,11 @@ afu-initialize-zcompile-register-zle-contrib-common () {
 }
 
 afu-initialize-zle-misc () {
-  afu-register-zle-afu-raw afu+vi-add-eol vi-add-eol vi-add-eol $afu_zles
-  afu-rebind-add afu+vi-add-eol \
-    'bindkey -M vicmd "A" afu+vi-add-eol' \
-    'bindkey -M vicmd "A" vi-add-eol'
+  local b=; v=; for v b in vi-add-eol A vi-add-next a; do
+    afu-register-zle-afu-raw afu+${v} ${v} ${v} $afu_zles
+    afu-rebind-add afu+${v} \
+      "bindkey -M vicmd '${b}' afu+${v}" "bindkey -M vicmd 'A' ${v}"
+  done
 }
 
 () {
