@@ -1141,7 +1141,7 @@ afu-register-zle-afu-override () {
 afu-initialize-zle-misc () {
   local b=; v=; for v b in vi-add-eol A vi-add-next a; do
     afu-register-zle-afu-override afu+${v} ${v} t \
-      "bindkey -M vicmd '${b}' afu+${v}" "bindkey -M vicmd 'A' ${v}"
+      "bindkey -M vicmd '${b}' afu+${v}" "bindkey -M vicmd '${b}' ${v}"
   done
 }
 
@@ -1174,7 +1174,7 @@ afu-clean () {
 afu-install-installer () {
   local match mbegin mend
 
-  eval ${${${${${"$(<=(cat <<"EOT"
+  eval ${${${${${${${"$(<=(cat <<"EOT"
     auto-fu-install () {
       typeset -ga afu_accept_lines
       afu_accept_lines=($afu_accept_lines)
@@ -1182,6 +1182,10 @@ afu-install-installer () {
       afu_zle_contribs=($afu_zle_contribs)
       typeset -ga afu_rhs_no_kills
       afu_rhs_no_kills=($afu_rhs_no_kills)
+      typeset -gA afu_rebinds_pre
+      afu_rebinds_pre=($afu_rebinds_pre)
+      typeset -gA afu_rebinds_post
+      afu_rebinds_post=($afu_rebinds_post)
       { $body }
       afu-install
     }
@@ -1200,6 +1204,8 @@ EOT
       )
     }/\$afu_accept_lines/$afu_accept_lines
     }/\$afu_rhs_no_kills/$afu_rhs_no_kills
+    }/\$afu_rebinds_pre/$(afu-install-installer-expand-assoc afu_rebinds_pre)
+    }/\$afu_rebinds_post/$(afu-install-installer-expand-assoc afu_rebinds_post)
     }/\$afu_zle_contribs/${(kv)afu_zle_contribs}}
 }
 
@@ -1214,6 +1220,12 @@ afu-install-installer-expand-mapped-cammonds () {
     ${${(u)zles/zle -N (#b)*+(*) */
       autoload -Uz $afu_zle_contribs[$match]
       zle -N $afu_zle_contribs[$match]}} \
+}
+
+afu-install-installer-expand-assoc () {
+  local k=; v=; for k v in ${(@kvPAA)1}; do
+    echo ${(q)k} ${(q)v}
+  done
 }
 
 auto-fu-zcompile () {
