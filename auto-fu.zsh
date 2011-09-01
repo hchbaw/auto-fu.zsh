@@ -545,7 +545,7 @@ with-afu-region-highlight-saving () {
       if ((PENDING==0)); then
         if (($#afu_rhs_no_kills != 0)) && \
            [[ -z ${(M)afu_rhs_no_kills:#$WIDGET} ]]; then
-          afu-rhs-protect rh  afu-rhs-save : afu-rhs-kill "$tmp[@]"
+          afu-rhs-protect rh  afu-rhs-save afu-rhs-kill afu-rhs-kill "$tmp[@]"
         else
           afu-rhs-protect rh  afu-rhs-save : : "$tmp[@]"
         fi
