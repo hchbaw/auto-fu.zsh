@@ -1226,11 +1226,28 @@ afu-register-zle-afu-override () {
   }
 }
 
+auto-fu-magic-space () {
+  # TODO: look up shell option first.
+  if \
+    [[ -n "${_lastcomp[prefix]-}" ]] &&
+    [[ -n "${_lastcomp[unambiguous]-}" ]] &&
+    [[ "${_lastcomp[insert_positions]-}" != *:* ]] &&
+    [[ "${_lastcomp[prefix]-}" == "${_lastcomp[unambiguous]}" ]] &&
+    ((CURSOR == $_lastcomp[insert_positions])) &&
+    [[ "$LBUFFER" == *"${_lastcomp[prefix]-}" ]] &&
+    [[ "$LBUFFER[-1]" == '/' ]]; then
+    LBUFFER="$LBUFFER[1,-2]"
+  fi
+  zle .magic-space
+}
+zle -N auto-fu-magic-space
+
 afu-initialize-zle-misc () {
   local b=; v=; for v b in vi-add-eol A vi-add-next a; do
     afu-register-zle-afu-override afu+${v} ${v} t \
       "bindkey -M vicmd '${b}' afu+${v}" "bindkey -M vicmd '${b}' ${v}"
   done
+  afu-register-zle-afu-override afu+magic-space auto-fu-magic-space nil
 }
 
 () {
