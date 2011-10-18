@@ -943,7 +943,8 @@ with-afu-menuselecting-handling () {
       # _matching: (_match completer is in use; narrowing the candidates)
       # do *NOT* call complete-word after redrawing the current buffer with
       # the old contents (ex: *ab*)
-      [[ -n ${afu_match_ret-} ]] && {
+      [[ -n ${afu_match_ret-} ]] && ((${afu_match_ret} == 0)) && {
+        ((${_lastcomp[nmatches]} == 1)) && return 0 # _match succeeded
         afu_match_rec_p=t; { afu-hmbk-selected-key-p } && return 0 || return 1
       }
 
