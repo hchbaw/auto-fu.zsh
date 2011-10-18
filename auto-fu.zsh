@@ -917,7 +917,7 @@ with-afu-menuselecting-handling () {
   # `_match|_approximate|etc. ⇒ select something` or not.
   [[ "${afu_curcompleter-}" == ${~inserts} ]] &&
   [[ $WIDGET == (magic-space|accept-line*) ]] && {
-    with-afu-compfuncs zle list-choices
+    with-afu-completer-vars zle list-choices
     return
   }
 
@@ -965,7 +965,7 @@ with-afu-menuselecting-handling () {
   [[ -z ${force_menuselect_off_p}  ]] &&
   [[ -z ${afu_one_match_p-}        ]] &&
   { [[ -n ${afu_match_ret-} ]] && ((${afu_match_ret} == 0)) } &&
-  { with-afu-compfuncs zle complete-word }
+  { with-afu-completer-vars zle complete-word }
 }
 
 afu-hmbk-selected-key-p () {
