@@ -612,22 +612,28 @@ auto-fu-extend () { "$@" }; zle -N auto-fu-extend
 with-afu~ () { zle auto-fu-extend -- with-afu "$@" }
 
 with-afu-zsh-syntax-highlighting () {
+  local -a rh_old; : ${(A)rh_old::=$region_highlight}
+  local b_old; b_old="${buffer_cur-}"
   local -i ret=0
   local -i hip=0; ((hip=$+functions[_zsh_highlight]))
   ((hip==0)) && { "$1" t   "$@[2,-1]"; ret=$? }
   ((hip!=0)) && { "$1" nil "$@[2,-1]"; ret=$? }
-  ((hip==1)) && {
-    if ((afu_in_p==1)); then
-      # XXX: Badness
-      [[ "$BUFFER" != "$buffer_cur" ]] && { _ZSH_HIGHLIGHT_PRIOR_BUFFER="" }
-      ((CURSOR != cursor_cur))         && { _ZSH_HIGHLIGHT_PRIOR_CORSUR=-1 }
-    fi
-    _zsh_highlight
-  }
-  ((ret==-1)) || {
-    local _ok ck
-    afu-rh-highlight-state _ok ck; "$ck"
-  }
+  if ((PENDING==0)); then
+    ((hip==1)) && {
+      if ((afu_in_p==1)); then
+        # XXX: Badness
+        [[ "$BUFFER" != "$buffer_cur" ]] && { _ZSH_HIGHLIGHT_PRIOR_BUFFER="" }
+        ((CURSOR != cursor_cur))         && { _ZSH_HIGHLIGHT_PRIOR_CORSUR=-1 }
+      fi
+      _zsh_highlight
+    }
+    ((ret==-1)) || {
+      local _ok ck
+      afu-rh-highlight-state _ok ck; "$ck"
+    }
+  else
+    [[ ${#${buffer_cur-}} > $#b_old ]] && : ${(A)region_highlight::=$rh_old}
+  fi
 }
 
 # XXX: redefined!
