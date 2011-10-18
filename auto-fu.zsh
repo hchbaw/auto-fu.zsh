@@ -979,25 +979,23 @@ afu+complete-word () {
 
     (($+_lastcomp)) ||
     { [[ $lastcompp == t ]] && [[ -n $_lastcomp[nmatches] ]] } ||
-    { [[ $LBUFFER[-1] == [[:space:]] ]] } &&
-    { zle complete-word; return $? }
-
-    function () {
-      [[ $_lastcomp[completer] == complete ]] || return
-      [[ -n "$_lastcomp[unambiguous]" ]] || return
-      [[ $_lastcomp[prefix] != $_lastcomp[unambiguous] ]] || return
-      # At this point, expand the ambiguous portion of the buffer.
+    { [[ $LBUFFER[-1] == [[:space:]] ]] } && {
+      function () {
+        [[ $_lastcomp == "" ]] && return
+        [[ $_lastcomp[completer] == complete ]] || return
+        [[ -n "$_lastcomp[unambiguous]" ]] || return
+        [[ $_lastcomp[prefix] != $_lastcomp[unambiguous] ]] || return
+        (($_lastcomp[nmatches]==1)) && return
+        # At this point, expand the ambiguous portion of the buffer.
+        zle complete-word
+      }
       zle complete-word
+      return $?
     }
 
     (( $_lastcomp[nmatches] == 0 )) && { return 0 }
     (( $_lastcomp[nmatches]  > 1 )) && [[ $LBUFFER[-1] != [[:space:]] ]] && {
-      zle complete-word
-      # TODO: check to see if unambiguous stuff is being in effect,
-      # TODO: do something for the next self-insert ought to do some magics.
-      # % t /u/s/d/ ⇒ activate 'debconf' ⇒ insert '/' then BUFFER becomes
-      #  "t /usr/share/debconf/ /"
-      return $?
+      zle complete-word; return $?
     }
     (( $_lastcomp[nmatches] == 1 )) || [[ $LBUFFER[-1] == [[:space:]] ]] && {
       local c=$LBUFFER[-1]
