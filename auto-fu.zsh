@@ -580,6 +580,8 @@ afu-rhs-protect () {
     if (($a[2] > $#BUFFER + 1)); then
       "$killfun" $place "$a[*]"
       "$savefun" "$a[1] $#BUFFER $a[3]"
+    elif (($a[2] > $#BUFFER)); then
+      "$savefun" "$a[1] $#BUFFER $a[3]"
     else
       (($a[1] > $#BUFFER + 1)) || "$savefun" "$a[*]"
     fi
