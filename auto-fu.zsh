@@ -515,9 +515,11 @@ with-afu-trapint () {
 with-afu-trap-handling () {
   case "$WIDGET" in
     afu+complete-word) {
-      (($_lastcomp[nmatches] > 1)) && \
+      [[ "${LASTWIDGET-}" == "complete-word" ]] && {
         # XXX: This is most likely menuselecting state ⇒ escape from it.
+        ((afu_trap_count++))
         return $((128 + $?))
+      }
     };;
     history*) { zle send-break; return 0 } ;; # send-break escapes actually.
   esac
