@@ -574,7 +574,7 @@ afu-rhs-protect () {
     if ((CURSOR > $tmp[2])) || [[ $WIDGET == *complete* ]]; then
       "$savefun" "$a[*]"
     else
-      "$rillfun" $place "$a[*]"
+      [[ -n "${(P)place-}" ]] && "$rillfun" $place "$a[*]"
     fi
   else
     if (($a[2] > $#BUFFER + 1)); then
