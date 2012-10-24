@@ -555,7 +555,7 @@ afu-split-shell-arguments () {
 afu-autoable-space-p () {
   local c=$LBUFFER[-1]
   [[ $c == ''  ]] && return 1;
-  [[ $c == ' ' ]] && { afu-able-space-p || return 1 && return -1 }
+  [[ $c == ' ' ]] && { afu-able-space-p || return 1 }
   return 0
 }
 
