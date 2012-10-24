@@ -508,29 +508,37 @@ auto-fu-init () { with-afu-zle-rebinding afu-line-init }; zle -N auto-fu-init
 
 with-afu-trapint () {
   setopt localtraps
-  TRAPINT () { with-afu-trap-handling afu-trap-ignore-int "$@"; return $? }
+  TRAPINT () {
+    local signum="$1"; shift
+    with-afu-trapint-handling "$signum" intr afu-trap-ignore-int "$@"
+    return $?
+  }
   "$@"
 }
 
-with-afu-trap-handling () {
+with-afu-trapint-handling () {
+  local number="$1"; shift
+  local   name="$1"; shift
   case "$WIDGET" in
     afu+complete-word) {
-      [[ "${LASTWIDGET-}" == "complete-word" ]] && {
+      [[ "${LASTWIDGET-}" != afu+complete-word ]] && {
         # XXX: This is most likely menuselecting state ⇒ escape from it.
-        ((afu_trap_count++))
-        return $((128 + $?))
+        return $((128+$number))
       }
     };;
     history*) { zle send-break; return 0 } ;; # send-break escapes actually.
   esac
-  [[ -n ${afu_match_ret-} ]] && { zle send-break; return 0; }
+  [[ -n ${afu_match_ret-} ]] && ((${afu_match_ret} == 0)) && {
+    afu_match_ret=
+    zle send-break; return 0
+  }
   "$@"
   return $?
 }
 
 afu-trap-ignore-int () {
   typeset -gi afu_trap_count
-  if [[ "$LASTWIDGET" == "auto-fu-deactivate" ]]; then
+  if [[ "${LASTWIDGET-}" == "auto-fu-deactivate" ]]; then
     ((afu_trap_count++))
   else
     afu_trap_count=0
