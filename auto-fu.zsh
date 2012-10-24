@@ -1236,7 +1236,7 @@ auto-fu-magic-space () {
     [[ "${_lastcomp[prefix]-}" == "${_lastcomp[unambiguous]}" ]] &&
     ((CURSOR == $_lastcomp[insert_positions])) &&
     [[ "$LBUFFER" == *"${_lastcomp[prefix]-}" ]] &&
-    [[ "$LBUFFER[-1]" == '/' ]]; then
+    [[ "$LBUFFER" == *[^[:space:]=]/ ]]; then
     LBUFFER="$LBUFFER[1,-2]"
   fi
   zle .magic-space
