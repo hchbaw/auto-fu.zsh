@@ -1229,6 +1229,7 @@ afu-register-zle-afu-override () {
 auto-fu-magic-space () {
   # TODO: look up shell option first.
   if \
+    { afu-autoable-paused-p || false } &&
     [[ -n "${_lastcomp[prefix]-}" ]] &&
     [[ -n "${_lastcomp[unambiguous]-}" ]] &&
     [[ "${_lastcomp[insert_positions]-}" != *:* ]] &&
