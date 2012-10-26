@@ -342,8 +342,9 @@ afu-adjust-main-keymap () { [[ "$KEYMAP" == 'main' ]] && { zle -K "$1" } }
 afu-track-keymap () {
   typeset -gA afu_keymap_state # XXX: global state variable.
   local new="${KEYMAP}"
-  local old="${2}"
-  local fun="${3}"
+  # XXX: widget name will not be passed (zsh < 8856dc8)
+  local old="${@[-2]}"
+  local fun="${@[-1]}"
   { afu-track-keymap-skip-p "$old" "$new" } && return
   local cur="${afu_keymap_state[cur]-}"
   afu_keymap_state+=(old "${afu_keymap_state[cur]-}")
