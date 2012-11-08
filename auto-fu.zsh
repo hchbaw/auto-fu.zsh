@@ -288,7 +288,7 @@ afu-install-eof () {
 
 afu-eof-maybe () {
   local eof="$1"; shift
-  [[ "$BUFFER" != '' ]] || { $eof; return }
+  [[ -z $BUFFER ]] && { $eof; return }
   "$@"
 }
 
