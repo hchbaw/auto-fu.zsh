@@ -33,6 +33,71 @@
 # TIMEFMT="%*E %J"
 # 0.041 ( source ./auto-fu.zsh; )
 # 0.004 ( source ~/.zsh/auto-fu; auto-fu-install; )
+# Here is the auto-fu-zcompile manual.
+# --- >8 ---
+# NAME
+#        auto-fu-zcompile - zcompile auto-fu
+#
+# SYNOPSIS
+#        auto-fu-zcompile <auto-fu.zsh file> <directory to output>
+#               [<restoffiles>...]
+#
+# DESCRIPTION
+#        This command dumps out the auto-fu's functions, zle and stuff to
+#        <directory to output>/auto-fu. This is inspired from `compinit' which
+#        dumps out the completion system's internal stuff to ~/.zcompdump.
+#        Then `zrecompile' the <directory to output>/auto-fu.
+#        As you can see, auto-fu.zsh has some `eval' calls, so it may result
+#        poor loading performance. I want to avoid that as far as possible, so
+#        the resulting file (~/.zsh/auto-fu) has fewer `eval's and stripped
+#        unnecessary things at runtime.
+#        afu+* and auto-fu* widgets and afu+* functions will *NOT* be
+#        stripped by auto-fu-zcompile.
+#
+# OPTIONS
+#        <auto-fu.zsh file>
+#            This file.
+#
+#        <directory to output>
+#            Directory to dumped and zcompiled files reside.
+#
+#        [<restoffile>...]
+#            Files to be `source'ed right before the dumped file creation.
+#            auto-fu-zcompile will strip unnecessary stuff, so some utility
+#            shell functions will not be available at runtime. If you want
+#            to customize auto-fu stuff using auto-fu.zsh's internal
+#            functions, you can code it at this point (example below).
+#
+# EXAMPLES
+#        .   zcompile auto-fu in ~/.zsh.d:
+#
+#                % A=/path/to/auto-fu.zsh
+#                % (zsh -c "source $A ; auto-fu-zcompile $A ~/.zsh.d")
+#
+#        .   Customize some not-easily-customizable things:
+#
+#                % A=/path/to/auto-fu.zsh
+#                % (zsh -c "source $A ; \
+#                  auto-fu-zcompile $A ~/.zsh.d ~/.zsh/auto-fu-customize.zsh")
+#
+#            '~/.zsh/auto-fu-customize.zsh' is something like this:
+#>
+#              afu+my-kill-line-maybe () {
+#                if (($#BUFFER > CURSOR));
+#                then zle kill-line
+#                else zle kill-whole-line
+#                fi
+#              }
+#              zle -N afu+my-kill-line-maybe
+#
+#              afu-register-zle-eof \
+#                afu+orf-ignoreeof-deletechar-list \
+#                afu-ignore-eof afu+my-kill-line-maybe
+#              afu-register-zle-eof \
+#                afu+orf-exit-deletechar-list exit afu+my-kill-line-maybe
+#<
+#            Using `afu-register-zle-eof' to customize the <C-d> behaviors.
+# --- 8< ---
 
 # Configuration
 # The auto-fu features can be configured via zstyle.
@@ -138,6 +203,8 @@
 
 # XXX: ignoreeof semantics changes for overriding ^D.
 # You cannot change the ignoreeof option interactively. I'm verry sorry.
+# To customize the ^D behavior further, it will be done for example above
+# auto-fu-zcomple manual's EXAMPLE section's code. Please take a look.
 
 # XXX: zsh-syntax-highlighting
 # I'm a very fond of this fancy zsh script `zsh-syntax-highlighting'.
@@ -276,6 +343,7 @@ afu-install () {
     }
     afu-install-isearchmap
     afu-install-eof
+    afu-install-preexec
   } always {
     zstyle ':auto-fu:var' misc-installed-p yes
   }
@@ -317,7 +385,7 @@ afu-install-eof () {
 
 afu-eof-maybe () {
   local eof="$1"; shift
-  [[ "$BUFFER" != '' ]] || { $eof; return }
+  [[ -z $BUFFER ]] && { $eof; return }
   "$@"
 }
 
@@ -331,6 +399,17 @@ afu-register-zle-eof () {
 }
 afu-register-zle-eof afu+orf-ignoreeof-deletechar-list afu-ignore-eof
 afu-register-zle-eof      afu+orf-exit-deletechar-list exit
+
+afu-install-preexec () {
+  zstyle -t ':auto-fu:var' preexec-installed-p || {
+    autoload -Uz add-zsh-hook
+    add-zsh-hook preexec auto-fu-preexec
+  } always {
+    zstyle ':auto-fu:var' preexec-installed-p yes
+  }
+}
+
+auto-fu-preexec () { echo -en '\e[0m' }
 
 afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
 afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
@@ -1222,6 +1301,7 @@ auto-fu-zcompile () {
 
   local s=${1:?Please specify the source file itself.}
   local d=${2:?Please specify the directory for the zcompiled file.}
+  shift 2 # "$@" is now point to rest of files for further customizations
   local g=${d}/auto-fu
   setopt localoptions extendedglob no_shwordsplit
 
@@ -1229,6 +1309,12 @@ auto-fu-zcompile () {
   { source ${s} >/dev/null 2>&1 } # Paranoid.
   echo "mkdir -p ${d}" | sh -x
   afu-clean ${d}
+  (($#@ > 0)) && {
+    eval "$({
+      autoload -Uz zargs
+      zargs -I{} -- "$@" -- echo source {}
+    })"
+  }
   afu-install-installer
   echo "* writing code ${g}"
   {
