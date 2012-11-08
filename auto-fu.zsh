@@ -246,6 +246,7 @@ afu-install () {
     }
     afu-install-isearchmap
     afu-install-eof
+    afu-install-preexec
   } always {
     zstyle ':auto-fu:var' misc-installed-p yes
   }
@@ -301,6 +302,17 @@ afu-register-zle-eof () {
 }
 afu-register-zle-eof afu+orf-ignoreeof-deletechar-list afu-ignore-eof
 afu-register-zle-eof      afu+orf-exit-deletechar-list exit
+
+afu-install-preexec () {
+  zstyle -t ':auto-fu:var' preexec-installed-p || {
+    autoload -Uz add-zsh-hook
+    add-zsh-hook preexec auto-fu-preexec
+  } always {
+    zstyle ':auto-fu:var' preexec-installed-p yes
+  }
+}
+
+auto-fu-preexec () { echo -en '\e[0m' }
 
 afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
 afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
