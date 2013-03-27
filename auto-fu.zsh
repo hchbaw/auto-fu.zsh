@@ -917,6 +917,12 @@ afu-comppre () {
     compstate[old_list]=
     compstate[insert]=automenu-unambiguous
   }
+  [[ $LASTWIDGET == afu+complete-word ]] && (($_lastcomp[nmatches]==1)) && {
+    # XXX: sudo unbound-control set_<TAB> -> <TAB> ⇒
+    # sudo unbound-control set_option set_option; preventing this behavior
+    # to clear the completion internal state variable below.
+    compstate[old_list]=
+  }
 }
 
 afu-comppost () {
