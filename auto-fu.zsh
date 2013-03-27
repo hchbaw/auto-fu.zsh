@@ -1015,7 +1015,7 @@ afu-initialize-register-zle-contrib-all () {
           # _zsh_highlight only
           afu-initialize-register-zle-contrib~ $bname $uname t
           ;;
-        ((#b)(*) '&& _zsh_highlight')
+        ((#b)(*) '-- "$@" && _zsh_highlight')
           # _zsh_highlight plus custom widget
           afu-initialize-register-zle-contrib~ $bname \
             ${${widgets[${match}]}#user:} nil $uname
