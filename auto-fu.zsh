@@ -989,7 +989,7 @@ afu+complete-word () {
         # At this point, expand the ambiguous portion of the buffer.
         zle complete-word
       }
-      zle complete-word
+      with-afu-completer-vars zle complete-word
       return $?
     }
 
