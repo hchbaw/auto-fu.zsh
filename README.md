@@ -9,7 +9,7 @@ by y.fujii &lt;y-fujii at mimosa-pudica.net&gt;
 
 Thank you very much y.fujii!
 
-Adapted by Takeshi Banse &lt;takebi@laafc.net&gt;
+Adapted by Takeshi Banse &lt;takebi@laafc.net&gt;, public domain
 I want to use it with menu selection.
 
 To use this,
@@ -35,6 +35,60 @@ It is approximately *(6~10) faster if zcompiled, according to this result :)
 TIMEFMT="%*E %J"
 0.041 ( source ./auto-fu.zsh; )
 0.004 ( source ~/.zsh/auto-fu; auto-fu-install; )
+Here is the auto-fu-zcompile manual.
+--- &gt;8 ---
+NAME
+       auto-fu-zcompile - zcompile auto-fu
+SYNOPSIS
+       auto-fu-zcompile &lt;auto-fu.zsh file&gt; &lt;directory to output&gt;
+              [&lt;restoffiles&gt;...]
+DESCRIPTION
+       This command dumps out the auto-fu's functions, zle and stuff to
+       &lt;directory to output&gt;/auto-fu. This is inspired from `compinit' which
+       dumps out the completion system's internal stuff to ~/.zcompdump.
+       Then `zrecompile' the &lt;directory to output&gt;/auto-fu.
+       As you can see, auto-fu.zsh has some `eval' calls, so it may result
+       poor loading performance. I want to avoid that as far as possible, so
+       the resulting file (~/.zsh/auto-fu) has fewer `eval's and stripped
+       unnecessary things at runtime.
+       afu+* and auto-fu* widgets and afu+* functions will *NOT* be
+       stripped by auto-fu-zcompile.
+OPTIONS
+       &lt;auto-fu.zsh file&gt;
+           This file.
+       &lt;directory to output&gt;
+           Directory to dumped and zcompiled files reside.
+       [&lt;restoffile&gt;...]
+           Files to be `source'ed right before the dumped file creation.
+           auto-fu-zcompile will strip unnecessary stuff, so some utility
+           shell functions will not be available at runtime. If you want
+           to customize auto-fu stuff using auto-fu.zsh's internal
+           functions, you can code it at this point (example below).
+EXAMPLES
+       .   zcompile auto-fu in ~/.zsh.d:
+               % A=/path/to/auto-fu.zsh
+               % (zsh -c "source $A ; auto-fu-zcompile $A ~/.zsh.d")
+       .   Customize some not-easily-customizable things:
+               % A=/path/to/auto-fu.zsh
+               % (zsh -c "source $A ; \
+                 auto-fu-zcompile $A ~/.zsh.d ~/.zsh/auto-fu-customize.zsh")
+           '~/.zsh/auto-fu-customize.zsh' is something like this:
+&gt;
+             afu+my-kill-line-maybe () {
+               if (($#BUFFER &gt; CURSOR));
+               then zle kill-line
+               else zle kill-whole-line
+               fi
+             }
+             zle -N afu+my-kill-line-maybe
+             afu-register-zle-eof \
+               afu+orf-ignoreeof-deletechar-list \
+               afu-ignore-eof afu+my-kill-line-maybe
+             afu-register-zle-eof \
+               afu+orf-exit-deletechar-list exit afu+my-kill-line-maybe
+&lt;
+           Using `afu-register-zle-eof' to customize the &lt;C-d&gt; behaviors.
+--- 8&lt; ---
 
 Configuration
 The auto-fu features can be configured via zstyle.
@@ -134,6 +188,8 @@ I'm very sorry for this annonying behaviour.
 
 XXX: ignoreeof semantics changes for overriding ^D.
 You cannot change the ignoreeof option interactively. I'm verry sorry.
+To customize the ^D behavior further, it will be done for example above
+auto-fu-zcomple manual's EXAMPLE section's code. Please take a look.
 
 TODO: play nice with zsh-syntax-highlighting.
 TODO: http://d.hatena.ne.jp/tarao/20100531/1275322620
