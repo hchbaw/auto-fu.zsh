@@ -6,7 +6,7 @@
 
 # Thank you very much y.fujii!
 
-# Adapted by Takeshi Banse <takebi@laafc.net>
+# Adapted by Takeshi Banse <takebi@laafc.net>, public domain
 # I want to use it with menu selection.
 
 # To use this,
