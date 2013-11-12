@@ -418,7 +418,6 @@ afu-line-init () {
     [[ -z ${ps} ]] || POSTDISPLAY="$ps"
 
     afu-recursive-edit-and-accept
-    zle -I
   } always {
     [[ -z ${ps} ]] || POSTDISPLAY=''
   }
