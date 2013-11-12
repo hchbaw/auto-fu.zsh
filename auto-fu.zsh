@@ -498,7 +498,6 @@ afu-line-init () {
     [[ -z ${ps} ]] || POSTDISPLAY="$ps"
 
     afu-recursive-edit-and-accept
-    zle -I
   } always {
     [[ -z ${ps} ]] || POSTDISPLAY=''
   }
@@ -625,7 +624,7 @@ with-afu-region-highlight-saving () {
       if ((PENDING==0)); then
         if (($#afu_rhs_no_kills != 0)) && \
            [[ -z ${(M)afu_rhs_no_kills:#$WIDGET} ]]; then
-          afu-rhs-protect rh  afu-rhs-save : afu-rhs-kill "$tmp[@]"
+          afu-rhs-protect rh  afu-rhs-save afu-rhs-kill afu-rhs-kill "$tmp[@]"
         else
           afu-rhs-protect rh  afu-rhs-save : : "$tmp[@]"
         fi
@@ -654,14 +653,16 @@ afu-rhs-protect () {
     if ((CURSOR > $tmp[2])) || [[ $WIDGET == *complete* ]]; then
       "$savefun" "$a[*]"
     else
-      "$rillfun" $place "$a[*]"
+      [[ -n "${(P)place-}" ]] && "$rillfun" $place "$a[*]"
     fi
   else
-    if (($a[2] > $#BUFFER)); then
+    if (($a[2] > $#BUFFER + 1)); then
       "$killfun" $place "$a[*]"
       "$savefun" "$a[1] $#BUFFER $a[3]"
+    elif (($a[2] > $#BUFFER)); then
+      "$savefun" "$a[1] $#BUFFER $a[3]"
     else
-      (($a[1] > $#BUFFER)) || "$savefun" "$a[*]"
+      (($a[1] > $#BUFFER + 1)) || "$savefun" "$a[*]"
     fi
   fi
 }
@@ -692,22 +693,28 @@ auto-fu-extend () { "$@" }; zle -N auto-fu-extend
 with-afu~ () { zle auto-fu-extend -- with-afu "$@" }
 
 with-afu-zsh-syntax-highlighting () {
+  local -a rh_old; : ${(A)rh_old::=$region_highlight}
+  local b_old; b_old="${buffer_cur-}"
   local -i ret=0
   local -i hip=0; ((hip=$+functions[_zsh_highlight]))
   ((hip==0)) && { "$1" t   "$@[2,-1]"; ret=$? }
   ((hip!=0)) && { "$1" nil "$@[2,-1]"; ret=$? }
-  ((hip==1)) && {
-    if ((afu_in_p==1)); then
-      # XXX: Badness
-      [[ "$BUFFER" != "$buffer_cur" ]] && { _ZSH_HIGHLIGHT_PRIOR_BUFFER="" }
-      ((CURSOR != cursor_cur))         && { _ZSH_HIGHLIGHT_PRIOR_CORSUR=-1 }
-    fi
-    _zsh_highlight
-  }
-  ((ret==-1)) || {
-    local _ok ck
-    afu-rh-highlight-state _ok ck; "$ck"
-  }
+  if ((PENDING==0)); then
+    ((hip==1)) && {
+      if ((afu_in_p==1)); then
+        # XXX: Badness
+        [[ "$BUFFER" != "$buffer_cur" ]] && { _ZSH_HIGHLIGHT_PRIOR_BUFFER="" }
+        ((CURSOR != cursor_cur))         && { _ZSH_HIGHLIGHT_PRIOR_CORSUR=-1 }
+      fi
+      _zsh_highlight
+    }
+    ((ret==-1)) || {
+      local _ok ck
+      afu-rh-highlight-state _ok ck; "$ck"
+    }
+  else
+    [[ ${#${buffer_cur-}} > $#b_old ]] && : ${(A)region_highlight::=$rh_old}
+  fi
 }
 
 # XXX: redefined!
@@ -1087,7 +1094,7 @@ afu-initialize-register-zle-contrib-all () {
           # _zsh_highlight only
           afu-initialize-register-zle-contrib~ $bname $uname t
           ;;
-        ((#b)(*) '&& _zsh_highlight')
+        ((#b)(*) '-- "$@" && _zsh_highlight')
           # _zsh_highlight plus custom widget
           afu-initialize-register-zle-contrib~ $bname \
             ${${widgets[${match}]}#user:} nil $uname
@@ -1221,7 +1228,7 @@ afu-register-zle-afu-override () {
 afu-initialize-zle-misc () {
   local b=; v=; for v b in vi-add-eol A vi-add-next a; do
     afu-register-zle-afu-override afu+${v} ${v} t \
-      "bindkey -M vicmd '${b}' afu+${v}" "bindkey -M vicmd 'A' ${v}"
+      "bindkey -M vicmd '${b}' afu+${v}" "bindkey -M vicmd '${b}' ${v}"
   done
 }
 
@@ -1254,7 +1261,7 @@ afu-clean () {
 afu-install-installer () {
   local match mbegin mend
 
-  eval ${${${${${"$(<=(cat <<"EOT"
+  eval ${${${${${${${"$(<=(cat <<"EOT"
     auto-fu-install () {
       typeset -ga afu_accept_lines
       afu_accept_lines=($afu_accept_lines)
@@ -1262,6 +1269,10 @@ afu-install-installer () {
       afu_zle_contribs=($afu_zle_contribs)
       typeset -ga afu_rhs_no_kills
       afu_rhs_no_kills=($afu_rhs_no_kills)
+      typeset -gA afu_rebinds_pre
+      afu_rebinds_pre=($afu_rebinds_pre)
+      typeset -gA afu_rebinds_post
+      afu_rebinds_post=($afu_rebinds_post)
       { $body }
       afu-install
     }
@@ -1280,6 +1291,8 @@ EOT
       )
     }/\$afu_accept_lines/$afu_accept_lines
     }/\$afu_rhs_no_kills/$afu_rhs_no_kills
+    }/\$afu_rebinds_pre/$(afu-install-installer-expand-assoc afu_rebinds_pre)
+    }/\$afu_rebinds_post/$(afu-install-installer-expand-assoc afu_rebinds_post)
     }/\$afu_zle_contribs/${(kv)afu_zle_contribs}}
 }
 
@@ -1294,6 +1307,12 @@ afu-install-installer-expand-mapped-cammonds () {
     ${${(u)zles/zle -N (#b)*+(*) */
       autoload -Uz $afu_zle_contribs[$match]
       zle -N $afu_zle_contribs[$match]}} \
+}
+
+afu-install-installer-expand-assoc () {
+  local k=; v=; for k v in ${(@kvPAA)1}; do
+    echo ${(q)k} ${(q)v}
+  done
 }
 
 auto-fu-zcompile () {
