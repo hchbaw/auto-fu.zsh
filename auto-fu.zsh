@@ -820,6 +820,32 @@ with-afu-resume () { afu-resume-maybe; ${widgets[auto-fu-extend]#*:} \"\$@\" }
 # XXX: redefined!
 zle -N auto-fu-extend with-afu-resume
 
+with-afu-magic-insert () {
+  typeset -g afu_magic_insert_p
+  local -i ret
+  {
+    if \
+      [[ $WIDGET == self-insert ]] &&
+      [[ $LASTWIDGET == afu+complete-word ]] &&
+      [[ $afu_magic_insert_p == t ]] &&
+      [[ ${LBUFFER% } == *$KEYS ]] then
+      LBUFFER=${${LBUFFER% }%$KEYS}
+    fi
+    "$@"
+    ((ret=$?))
+  } always {
+    [[ $WIDGET == afu+complete-word ]] || afu_magic_insert_p=nil
+  }
+  return $ret
+}
+
+eval "
+with-afu-magic-insert~ () {
+  with-afu-magic-insert ${widgets[auto-fu-extend]#*:} \"\$@\"
+}"
+# XXX: redefined!
+zle -N auto-fu-extend with-afu-magic-insert~
+
 afu-able-p () {
   # XXX: This could be done sanely in the _main_complete or $_comps[x].
   local pred=; zstyle -s ':auto-fu:var' autoablep-function pred
@@ -1190,9 +1216,10 @@ afu+complete-word () {
         [[ $_lastcomp[prefix] != $_lastcomp[unambiguous] ]] || return
         (($_lastcomp[nmatches]==1)) && return
         # At this point, expand the ambiguous portion of the buffer.
+        afu_magic_insert_p=t
         zle complete-word
       }
-      with-afu-completer-vars zle complete-word
+      zle complete-word
       return $?
     }
 
