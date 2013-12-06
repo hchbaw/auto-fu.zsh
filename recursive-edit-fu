@@ -1,0 +1,16 @@
+#!zsh
+# Public Domain
+# https://github.com/hchbaw/auto-fu.zsh/issues/3
+
+zle -N zle-line-init; zle-line-init () {
+  zle recursive-edit
+  local ret=$?
+  # XXX: This is not quite accurate though.
+  if ((ret==0)); then
+    local eof=$'\C-d'
+    [[ ${KEYS} == $eof ]] && {zle -U $eof; return ret} || zle accept-line
+  else
+    zle -U $'\C-g'
+  fi
+  return ret
+}
