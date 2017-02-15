@@ -420,7 +420,7 @@ afu-track-keymap-skip-p () {
 
 afu-install afu-keymap+widget
 function () {
-  [[ -z ${AUTO_FU_NOCP-} ]] || return
+  [[ -z ${AUTO_FU_NOCP} ]] || return
   # For backward compatibility
   zstyle ':auto-fu:highlight' input bold
   zstyle ':auto-fu:highlight' completion fg=black,bold
@@ -640,7 +640,7 @@ afu-autoable-space-p () {
 }
 
 afu-able-space-p () {
-  [[ -z ${AUTO_FU_NOCP-} ]] &&
+  [[ -z ${AUTO_FU_NOCP} ]] &&
     # For backward compatibility.
     { [[ "$WIDGET" == "magic-space" ]] || return 1 }
 
