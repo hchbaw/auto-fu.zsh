@@ -292,6 +292,20 @@ afu_zles=( \
   kill-whole-line kill-word magic-space yank \
 )
 
+afu-register-zle-afu () {
+  local afufun="$1"
+  local rawzle=".${afufun#*+}"
+  eval "function $afufun () { with-afu $rawzle $afu_zles; }; zle -N $afufun"
+}
+
+afu-initialize-zle-afu () {
+  local z
+  for z in $afu_zles ;do
+    afu-register-zle-afu afu+$z
+  done
+}
+afu-initialize-zle-afu
+
 autoload +X keymap+widget
 
 () {
@@ -328,6 +342,14 @@ afu-install () {
   bindkey -M afu "^X^[" afu+vi-cmd-mode
 
   bindkey -N afu-vicmd vicmd
+  bindkey -M afu-vicmd "i" afu+vi-ins-mode-i
+  bindkey -M afu-vicmd "I" afu+vi-ins-mode-I
+  bindkey -M afu-vicmd "a" afu+vi-ins-mode-a
+  bindkey -M afu-vicmd "A" afu+vi-ins-mode-A
+  bindkey -M afu-vicmd "s" afu+vi-ins-mode-s
+  bindkey -M afu-vicmd "S" afu+vi-ins-mode-S
+  bindkey -M afu-vicmd "C" afu+vi-ins-mode-C
+  bindkey -M afu-vicmd "cc" afu+vi-ins-mode-S
 }
 
 afu-install-isearchmap () {
@@ -381,7 +403,13 @@ afu-install-preexec () {
 
 auto-fu-preexec () { echo -en '\e[0m' }
 
-afu+vi-ins-mode () { zle -K afu      ; }; zle -N afu+vi-ins-mode
+afu+vi-ins-mode-i () { zle -K afu;                            }; zle -N afu+vi-ins-mode-i
+afu+vi-ins-mode-I () { zle -K afu; CURSOR=0;                  }; zle -N afu+vi-ins-mode-I
+afu+vi-ins-mode-a () { zle -K afu; CURSOR=$(( $CURSOR + 1 )); }; zle -N afu+vi-ins-mode-a
+afu+vi-ins-mode-A () { zle -K afu; CURSOR=${#BUFFER};         }; zle -N afu+vi-ins-mode-A
+afu+vi-ins-mode-s () { zle -K afu; BUFFER="${LBUFFER}${RBUFFER[2, $#RBUFFER]}"; }; zle -N afu+vi-ins-mode-s
+afu+vi-ins-mode-S () { zle -K afu; BUFFER='';                 }; zle -N afu+vi-ins-mode-S
+afu+vi-ins-mode-C () { zle -K afu; BUFFER="${LBUFFER}";       }; zle -N afu+vi-ins-mode-C
 afu+vi-cmd-mode () { zle -K afu-vicmd; }; zle -N afu+vi-cmd-mode
 
 auto-fu-zle-keymap-select () { afu-track-keymap "$@" afu-adjust-main-keymap }
@@ -547,19 +575,6 @@ with-afu () {
   } && { auto-fu-maybe }
 }
 
-afu-register-zle-afu () {
-  local afufun="$1"
-  local rawzle=".${afufun#*+}"
-  eval "function $afufun () { with-afu $rawzle $afu_zles; }; zle -N $afufun"
-}
-
-afu-initialize-zle-afu () {
-  local z
-  for z in $afu_zles ;do
-    afu-register-zle-afu afu+$z
-  done
-}
-afu-initialize-zle-afu
 
 afu-able-p () {
   # XXX: This could be done sanely in the _main_complete or $_comps[x].
