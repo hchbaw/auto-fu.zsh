@@ -176,7 +176,7 @@ zstyle ':auto-fu:highlight' completion/one fg=white,bold,underline
 zstyle ':auto-fu:var' postdisplay $'
 -azfu-'
 zstyle ':auto-fu:var' track-keymap-skip opp
-#zstyle ':auto-fu:var' disable magic-space
+# zstyle ':auto-fu:var' disable magic-space
 
 XXX: use with the error correction or _match completer.
 If you got the correction errors during auto completing the word, then
